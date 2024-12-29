@@ -1,0 +1,28 @@
+@font-face {
+	font-family: 'Satoshi';
+	src: url('https://static.humanitix.com/fonts/satoshi/variable.ttf') format('truetype');
+	font-weight: 300 900;
+}
+
+:root {
+	/* Colors */
+	--focused-base-outline-color: #a55735;
+	--primary-peach: #ffb593;
+
+	/* Other */
+
+	--focused-base-outline: 3px solid var(--focused-base-outline-color);
+	--focused-base-outline-offset: 0.2rem;
+}
+
+body,
+p {
+	margin: 0;
+	font-family: 'Satoshi', 'Montserrat', 'DejaVu Sans', Verdana, sans-serif;
+}
+
+a {
+	text-decoration: none;
+	color: inherit;
+	cursor: pointer;
+}
