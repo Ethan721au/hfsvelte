@@ -27,7 +27,39 @@
 		checked,
 		value
 	}: InputProps = $props();
-	console.log(type, 'props');
 </script>
 
-<div class={`input-wrapper ${type}`}>dfsd</div>
+<div class={`input-wrapper ${type}`}>
+	{#if name !== 'Send-in item' && name !== 'variant' && name !== 'Item from store'}
+		<input
+			{type}
+			{name}
+			{checked}
+			id={name}
+			value={typeof value === 'string' ? value : ''}
+			onchange={(e) =>
+				onChange?.((e.target as HTMLSelectElement).value || (e.target as HTMLInputElement).checked)}
+		/>
+	{/if}
+	<label for={product?.id || name} class={bold ? 'bold' : ''}>
+		{label}
+	</label>
+	{#if name === 'Send-in item' || name === 'variant'}
+		<select
+			class="product-options"
+			id={name}
+			{name}
+			value={selectedProduct}
+			onchange={(e) => onChange?.((e.target as HTMLSelectElement).value)}
+		>
+			<option value="default" disabled> --Select a product-- </option>
+			{#if options}
+				{#each options as option (option.id)}
+					<option value={option.title}>
+						{option.title}
+					</option>
+				{/each}
+			{/if}
+		</select>
+	{/if}
+</div>

@@ -3,22 +3,76 @@
 	flex-direction: column;
 }
 
-.input-wrapper .checkbox {
+.input-wrapper.checkbox {
 	flex-direction: row;
 }
 
-.input-wrapper .checkbox > label {
+.input-wrapper.checkbox > label {
 	order: 1;
 }
 
-.input-wrapper .checkbox > input {
+.input-wrapper.checkbox > input {
 	order: 0;
+	width: 16px;
+	height: 16px;
+}
+
+.input-wrapper.radio > input {
+	display: none;
+}
+
+.input-wrapper.checkbox > input:checked {
+	background-color: var(--primary-peach);
+	border: none;
 }
 
 .input-wrapper > label {
 	order: 0;
+	position: relative;
+}
+
+.input-wrapper > label.bold {
+	font-weight: bold;
+}
+
+.input-wrapper > label::before {
+	content: '';
+	position: absolute;
+	top: 11px;
+	left: -15px;
+	width: 9px;
+	height: 7px;
+	background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" width="9" height="7" viewBox="0 0 9 7" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.46989 6.79557L0.219933 4.69527C-0.073311 4.42153 -0.073311 3.97907 0.219933 3.70533C0.513177 3.43159 0.987167 3.43159 1.28041 3.70533L2.95738 5.27075L7.68078 0.244745C7.95078 -0.049296 8.42402 -0.0829008 8.73751 0.168435C9.0525 0.42047 9.08925 0.861532 8.81926 1.15487L3.56936 6.75566C3.43362 6.90408 3.23712 6.99229 3.02863 6.99999C2.80138 7.00069 2.61013 6.92718 2.46989 6.79557Z" fill="black"/></svg>');
+	background-size: cover;
+	background-repeat: no-repeat;
+	transform: translateY(-50%);
+	opacity: 0;
+}
+
+.input-wrapper.checkbox > input:checked + label::before {
+	opacity: 1;
 }
 
 .input-wrapper > input {
 	order: 1;
+	appearance: none;
+	outline: none;
+
+	width: 100%;
+	height: 100%;
+	border: 1px solid #e5e5e5;
+	border-radius: 4px;
+}
+
+.input-wrapper:not(.checkbox) > input:focus {
+	transition: outline-offset 0.2s ease-out;
+	outline-offset: var(--focused-base-outline-offset);
+	outline: var(--focused-base-outline);
+}
+
+.product-options {
+	width: 100%;
+	outline: none;
+	border-radius: 4px;
+	border: 1px solid #e5e5e5;
 }
