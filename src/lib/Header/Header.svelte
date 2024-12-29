@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Cart } from '$lib/shopify/types';
+	import type { CartProvider } from '$lib/cartContext.svelte';
 	import './header.css';
 	import { getContext } from 'svelte';
-	const cart = getContext<Cart | undefined>('cart');
+	const { cart } = getContext<CartProvider>('cart');
 	console.log(cart, 'cart');
 </script>
 

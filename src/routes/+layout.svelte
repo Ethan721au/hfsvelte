@@ -3,11 +3,10 @@
 	import type { PageData } from './$types';
 	import '../styles/global.css';
 	import Header from '$lib/Header/Header.svelte';
-	import type { Cart } from '$lib/shopify/types';
-	import { cartProvider } from '$lib/cartProvider.svelte';
+	import { cartContext } from '$lib/cartContext.svelte';
 
 	let { children, data }: { children: Snippet; data: PageData } = $props();
-	setContext<Cart | undefined>('cart', cartProvider(data.cart));
+	setContext('cart', cartContext(data.cart));
 </script>
 
 <div>
