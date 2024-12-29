@@ -15,7 +15,6 @@
 </script>
 
 <main>
-	<div>{handle}</div>
 	{#if collection}
 		<ProductForm {collection} />
 	{:else}

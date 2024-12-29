@@ -6,7 +6,7 @@
 	console.log(cart, 'cart');
 </script>
 
-<div class="wrapper">
+<div class="header-wrapper">
 	<a href="/" class="logo-wrapper">
 		<div class="logo-left-section">
 			<svg xmlns="http://www.w3.org/2000/svg" width="131" height="23" fill="none">

@@ -1,0 +1,24 @@
+.input-wrapper {
+	display: flex;
+	flex-direction: column;
+}
+
+.input-wrapper .checkbox {
+	flex-direction: row;
+}
+
+.input-wrapper .checkbox > label {
+	order: 1;
+}
+
+.input-wrapper .checkbox > input {
+	order: 0;
+}
+
+.input-wrapper > label {
+	order: 0;
+}
+
+.input-wrapper > input {
+	order: 1;
+}

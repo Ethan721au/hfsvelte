@@ -33,6 +33,20 @@
 	});
 </script>
 
+<!-- {#snippet figure(collection)}
+	<Input
+		type="text"
+		name={collection?.title}
+		bold
+		label={`${collection?.title} *`}
+		selectedProduct={selectedProduct?.title || ''}
+		onChange={(product) => {
+			selectedProduct = product.find((p) => p.title === (product as string));
+		}}
+		options={products}
+	/>
+{/snippet} -->
+
 <div>
 	<form onsubmit={handleSubmit}>
 		<input type="hidden" name="collection" value={collection?.handle} />
@@ -45,7 +59,8 @@
 					label={`${collection?.title} *`}
 					selectedProduct={selectedProduct?.title || ''}
 					onChange={(product) => {
-						selectedProduct = product.find((p) => p.title === (product as string));
+						const productTitle = product as string;
+						selectedProduct = product.find((p) => p.title === productTitle);
 					}}
 					options={products}
 				/>
@@ -67,5 +82,3 @@
 		<button type="submit">Click me</button>
 	</form>
 </div>
-
-<p>Entered value: {value}</p>

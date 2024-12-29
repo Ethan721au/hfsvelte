@@ -1,7 +1,6 @@
 <script lang="ts">
-	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
 	import type { Product, ProductVariant } from '$lib/shopify/types';
-	import { Label, Wrapper } from './styled';
+	import './input.css';
 
 	type InputProps = {
 		type: string;
@@ -30,3 +29,5 @@
 	}: InputProps = $props();
 	console.log(type, 'props');
 </script>
+
+<div class={`input-wrapper ${type}`}>dfsd</div>
