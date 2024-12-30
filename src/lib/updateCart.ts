@@ -1,20 +1,6 @@
-import { getContext } from 'svelte';
 import type { Attributes, Cart, CartItem, Product, ProductVariant } from './shopify/types';
 
-export const addCartItem = (
-	variant: ProductVariant,
-	product: Product,
-	attributes: Attributes[]
-) => {
-	console.log('sdfsfsd');
-};
-
 type UpdateType = 'plus' | 'minus' | 'delete';
-
-export type CartProvider = {
-	cart: Cart;
-	addCartItem: (variant: ProductVariant, product: Product, attributes: Attributes[]) => void;
-};
 
 type CartAction =
 	| {
@@ -30,40 +16,31 @@ type CartAction =
 			};
 	  };
 
-export const cartContext = (
-	variant: ProductVariant,
-	product: Product,
-	attributes: Attributes[]
-) => {
-	const { cart } = getContext<CartProvider>('cart');
-	// 	const newCart = cartReducer({ type: 'ADD_ITEM', payload: { variant, product, attributes } });
-	// let cart = $state(cartServer);
+export const updateCart = (cart: Cart, action: CartAction) => {
+	const currentCart = cart;
+	cart.totalQuantity += 1;
 
-	const cartReducer = (action: CartAction) => {
-		const currentCart = cart;
+	switch (action.type) {
+		case 'ADD_ITEM': {
+			const { variant, product, attributes } = action.payload;
+			const existingItem = currentCart?.lines.find((item) => item.merchandise.id === variant.id);
+			const updatedItem = createOrUpdateCartItem(existingItem, variant, product, attributes);
 
-		switch (action.type) {
-			case 'ADD_ITEM': {
-				const { variant, product, attributes } = action.payload;
-				const existingItem = currentCart?.lines.find((item) => item.merchandise.id === variant.id);
-				const updatedItem = createOrUpdateCartItem(existingItem, variant, product, attributes);
+			const updatedLines = existingItem
+				? cart?.lines.map((item) => (item.merchandise.id === variant.id ? updatedItem : item))
+				: [...currentCart.lines, updatedItem];
 
-				const updatedLines = existingItem
-					? cart?.lines.map((item) => (item.merchandise.id === variant.id ? updatedItem : item))
-					: [...currentCart.lines, updatedItem];
+			const updatedCart = {
+				...currentCart,
+				...updateCartTotals(updatedLines),
+				lines: updatedLines
+			};
 
-				const updatedCart = {
-					...currentCart,
-					...updateCartTotals(updatedLines),
-					lines: updatedLines
-				};
-
-				return updatedCart;
-			}
-			default:
-				return currentCart;
+			return updatedCart;
 		}
-	};
+		default:
+			return currentCart;
+	}
 
 	function createOrUpdateCartItem(
 		existingItem: CartItem | undefined,
@@ -117,13 +94,4 @@ export const cartContext = (
 	function calculateItemCost(quantity: number, price: string): string {
 		return (Number(price) * quantity).toString();
 	}
-
-	// const addCartItem = (variant: ProductVariant, product: Product, attributes: Attributes[]) => {
-	// 	const newCart = cartReducer({ type: 'ADD_ITEM', payload: { variant, product, attributes } });
-	// 	console.log('newCart', newCart);
-	// 	cart = newCart;
-	// 	console.log(cart, 'cart');
-	// };
-
-	return { cart };
 };

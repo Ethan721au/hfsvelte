@@ -6,7 +6,10 @@
 	import { cartContext } from '$lib/cartContext.svelte';
 
 	let { children, data }: { children: Snippet; data: PageData } = $props();
-	setContext('cart', cartContext(data.cart));
+	let cart = $state(data.cart);
+	// console.log(cart, 'cart');
+	// setContext('cart', cartContext(data.cart));
+	setContext('cart', { cart });
 </script>
 
 <div>

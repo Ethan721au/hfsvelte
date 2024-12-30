@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { priceFormatter } from '$lib';
-	import type { CartProvider } from '$lib/cartContext.svelte';
+	import { addCartItem, type CartProvider } from '$lib/cartContext.svelte';
 	import { addOnsKeys } from '$lib/constants';
 	import Input from '$lib/Input/Input.svelte';
 	import { getCollectionProducts } from '$lib/shopify';
 	import type { Attributes, Collection, Product, ProductVariant } from '$lib/shopify/types';
+	import { updateCart } from '$lib/updateCart';
 	import { getContext, onMount } from 'svelte';
 
 	type AddOn = {
@@ -20,7 +21,7 @@
 		attributes: { key: string; value: FormDataEntryValue }[];
 	};
 
-	const { updateCart } = getContext<CartProvider>('cart');
+	let { cart } = getContext<CartProvider>('cart');
 	let { collection }: { collection: Collection } = $props();
 	let collectionProducts: Product[] = $state([]);
 	let selectedProduct: Product | undefined = $state(undefined);
@@ -40,7 +41,8 @@
 		const formData = new FormData(event.target as HTMLFormElement);
 		const { lines, products } = await prepareItems(formData);
 
-		pepareCart(lines, products, updateCart);
+		const newCart = pepareCart(lines, products);
+		console.log(newCart, 'newCart');
 	};
 
 	const prepareItems = async (formData: FormData) => {
@@ -86,8 +88,8 @@
 
 	const pepareCart = (
 		lines: Line[],
-		products: Product[],
-		updateCart: (variant: ProductVariant, product: Product, attributes: Attributes[]) => void
+		products: Product[]
+		// addCartItem: (variant: ProductVariant, product: Product, attributes: Attributes[]) => void
 	) => {
 		lines.map((line) => {
 			const product = products.find((p) => p.variants.some((v) => v.id === line.merchandiseId));
@@ -98,7 +100,13 @@
 			}));
 
 			if (variant && product) {
-				updateCart(variant, product, attributes);
+				const test = updateCart(cart, {
+					type: 'ADD_ITEM',
+					payload: { variant, product, attributes }
+				});
+				console.log(test, 'test');
+
+				return test;
 			} else {
 				console.error('Skipping item due to missing product or variant:', line);
 			}
