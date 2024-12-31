@@ -6,7 +6,6 @@
 	import type { Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../../routes/+layout.svelte';
-	import { testing } from '$lib/Cart/actions.svelte';
 
 	type AddOn = {
 		id: string;
@@ -34,7 +33,6 @@
 		event.preventDefault();
 		const formData = new FormData(event.target as HTMLFormElement);
 		prepareCartItems(formData, collection, cart);
-		testing();
 	};
 
 	const handleAddOnChange = (addOnId: string, checked: boolean) => {

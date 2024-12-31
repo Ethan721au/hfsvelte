@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { CartProvider } from '$lib/cartContext.svelte';
 	import { getContext } from 'svelte';
-	const { cart } = getContext<CartProvider>('cart');
+	import type { CartContext } from './+layout.svelte';
+	const { cart } = getContext<CartContext>('cart');
 	console.log(cart, 'cart');
 	const handleIncrement = () => {
 		if (cart) {
