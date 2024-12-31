@@ -14,8 +14,13 @@
 		value?: FormDataEntryValue | undefined;
 	};
 
+	type ProductFormProps = {
+		collection: Collection;
+		isCart?: boolean;
+	};
+
 	let { cart } = getContext<CartContext>('cart');
-	let { collection }: { collection: Collection } = $props();
+	let { collection, isCart }: ProductFormProps = $props();
 	let collectionProducts: Product[] = $state([]);
 	let selectedProduct: Product | undefined = $state(undefined);
 	let selectedVariant: ProductVariant | undefined = $state(undefined);
@@ -28,6 +33,28 @@
 		productsWithVariants.find((p) => p.title === selectedProduct?.title)?.variants
 	);
 	let addOns = $derived(collectionProducts?.filter((p) => p.productType === 'add-on')[0]?.variants);
+
+	$effect(() => {
+		if (cart && isCart) {
+			const cartProduct = cart.lines.find((line) =>
+				line.attributes?.some((a) => a.value === collection?.title)
+			);
+			console.log(cartProduct, 'cartProduct');
+			if (cartProduct) {
+				selectedProduct = cartProduct?.merchandise.product;
+				selectedVariant = cartProduct.merchandise.product.variants?.edges.find(
+					(v) => v.node.title === cartProduct.merchandise.selectedOptions[0].value
+				)?.node;
+				if (addOns) {
+					const matchedAddons = addOns.filter((addon) =>
+						cartProduct.attributes.some((attribute) => attribute.key === addon.title)
+					);
+
+					console.log(matchedAddons, 'testing');
+				}
+			}
+		}
+	});
 
 	const handleSubmit = async (event: Event) => {
 		event.preventDefault();
@@ -61,6 +88,8 @@
 		if (collection) {
 			collectionProducts = await getCollectionProducts({ collection: collection.handle });
 		}
+		console.log(collectionProducts, 'collectionProducts');
+		console.log(addOns, 'addOns');
 	});
 </script>
 

@@ -114,6 +114,7 @@ export type CartProduct = {
 	featuredImage: Image;
 	productType?: string;
 	collections?: Connection<ShopifyCollection>;
+	variants?: Connection<ProductVariant>;
 };
 
 export type CartItem = {
