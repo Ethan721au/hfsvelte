@@ -1,14 +1,16 @@
 import { HIDDEN_PRODUCT_TAG, SHOPIFY_GRAPHQL_API_ENDPOINT, TAGS } from '$lib/constants';
 import { isShopifyError } from '$lib/type-guards';
-import { createCartMutation } from './mutations/cart';
+import { addToCartMutation, createCartMutation } from './mutations/cart';
 import { getCartQuery } from './queries/cart';
 import { getCollectionProductsQuery, getCollectionsQuery } from './queries/collection';
 import type {
+	Attributes,
 	Cart,
 	Collection,
 	Connection,
 	Image,
 	Product,
+	ShopifyAddToCartOperation,
 	ShopifyCart,
 	ShopifyCartOperation,
 	ShopifyCollection,
@@ -229,4 +231,20 @@ export async function getCart(cartId: string | undefined): Promise<Cart | undefi
 	}
 
 	return reshapeCart(res.body.data.cart);
+}
+
+export async function addToCart(
+	cartId: string,
+	lines: { merchandiseId: string; quantity: number; attributes: Attributes[] }[]
+): Promise<Cart> {
+	const res = await shopifyFetch<ShopifyAddToCartOperation>({
+		query: addToCartMutation,
+		variables: {
+			cartId,
+			lines
+		},
+		cache: 'no-cache'
+	});
+
+	return reshapeCart(res.body.data.cartLinesAdd.cart);
 }

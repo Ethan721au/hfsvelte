@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { priceFormatter } from '$lib';
-	import { addCartItem, type CartProvider } from '$lib/cartContext.svelte';
-	import { addOnsKeys } from '$lib/constants';
+	import { prepareCartItems } from '$lib/Cart/actions';
 	import Input from '$lib/Input/Input.svelte';
 	import { getCollectionProducts } from '$lib/shopify';
-	import type { Attributes, Collection, Product, ProductVariant } from '$lib/shopify/types';
-	import { updateCart } from '$lib/updateCart';
+	import type { Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
+	import type { CartContext } from '../../routes/+layout.svelte';
+	import { testing } from '$lib/Cart/actions.svelte';
 
 	type AddOn = {
 		id: string;
@@ -15,13 +15,7 @@
 		value?: FormDataEntryValue | undefined;
 	};
 
-	type Line = {
-		merchandiseId: string;
-		quantity: number;
-		attributes: { key: string; value: FormDataEntryValue }[];
-	};
-
-	let { cart } = getContext<CartProvider>('cart');
+	let { cart } = getContext<CartContext>('cart');
 	let { collection }: { collection: Collection } = $props();
 	let collectionProducts: Product[] = $state([]);
 	let selectedProduct: Product | undefined = $state(undefined);
@@ -39,78 +33,8 @@
 	const handleSubmit = async (event: Event) => {
 		event.preventDefault();
 		const formData = new FormData(event.target as HTMLFormElement);
-		const { lines, products } = await prepareItems(formData);
-
-		const newCart = pepareCart(lines, products);
-		console.log(newCart, 'newCart');
-	};
-
-	const prepareItems = async (formData: FormData) => {
-		const items = Object.fromEntries(formData.entries());
-		const products = await getCollectionProducts({
-			collection: items.collection as string
-		});
-		const product = products.find((p) => p.title === items[collection!.title]);
-		const variant =
-			product?.variants.find((v) => v.title === items.variant) || product?.variants[0];
-		const productAddOns = Object.entries(items)
-			.filter(([key]) => addOnsKeys.includes(key))
-			.map(([key, value]) => ({ key, value }));
-
-		const addOnsIds = productAddOns.map(({ key }) => {
-			const merchandiseId = products
-				.find((p) => p.handle === 'add-ons')
-				?.variants.find((v) => v.title === key)?.id as string;
-
-			if (!merchandiseId) {
-				throw new Error(`Merchandise ID not found for add-on: ${key}`);
-			}
-			return {
-				merchandiseId,
-				quantity: 1,
-				attributes: []
-			};
-		});
-
-		const variantId = {
-			merchandiseId: variant?.id || '',
-			quantity: 1,
-			attributes: [{ key: 'Order type', value: collection?.title }, ...productAddOns]
-		};
-
-		const lines = [variantId, ...addOnsIds];
-
-		return {
-			lines,
-			products
-		};
-	};
-
-	const pepareCart = (
-		lines: Line[],
-		products: Product[]
-		// addCartItem: (variant: ProductVariant, product: Product, attributes: Attributes[]) => void
-	) => {
-		lines.map((line) => {
-			const product = products.find((p) => p.variants.some((v) => v.id === line.merchandiseId));
-			const variant = product?.variants.find((v) => v.id === line.merchandiseId);
-			const attributes = line.attributes.map((attr) => ({
-				key: attr.key,
-				value: attr.value
-			}));
-
-			if (variant && product) {
-				const test = updateCart(cart, {
-					type: 'ADD_ITEM',
-					payload: { variant, product, attributes }
-				});
-				console.log(test, 'test');
-
-				return test;
-			} else {
-				console.error('Skipping item due to missing product or variant:', line);
-			}
-		});
+		prepareCartItems(formData, collection, cart);
+		testing();
 	};
 
 	const handleAddOnChange = (addOnId: string, checked: boolean) => {

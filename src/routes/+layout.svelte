@@ -3,12 +3,13 @@
 	import type { PageData } from './$types';
 	import '../styles/global.css';
 	import Header from '$lib/Header/Header.svelte';
-	import { cartContext } from '$lib/cartContext.svelte';
+	import type { Cart } from '$lib/shopify/types';
+
+	export type CartContext = { cart: Cart };
 
 	let { children, data }: { children: Snippet; data: PageData } = $props();
 	let cart = $state(data.cart);
-	// console.log(cart, 'cart');
-	// setContext('cart', cartContext(data.cart));
+
 	setContext('cart', { cart });
 </script>
 

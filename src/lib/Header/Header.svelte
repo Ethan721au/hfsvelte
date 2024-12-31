@@ -1,8 +1,10 @@
 <script lang="ts">
-	import type { CartProvider } from '$lib/cartContext.svelte';
+	// import type { CartProvider } from '$lib/cartContext.svelte';
+	// import type { Cart } from '$lib/shopify/types';
+	import type { CartContext } from '../../routes/+layout.svelte';
 	import './header.css';
 	import { getContext } from 'svelte';
-	const { cart } = getContext<CartProvider>('cart');
+	const { cart } = getContext<CartContext>('cart');
 	console.log(cart, 'cart');
 </script>
 

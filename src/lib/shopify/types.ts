@@ -113,7 +113,7 @@ export type CartProduct = {
 	title: string;
 	featuredImage: Image;
 	productType?: string;
-	collections: Connection<ShopifyCollection>;
+	collections?: Connection<ShopifyCollection>;
 };
 
 export type CartItem = {
@@ -135,7 +135,7 @@ export type CartItem = {
 };
 
 export type ShopifyCart = {
-	id: string | undefined;
+	id: string;
 	attributes: Attributes[];
 	checkoutUrl: string;
 	cost: {
