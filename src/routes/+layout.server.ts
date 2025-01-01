@@ -6,12 +6,11 @@ export const load: LayoutServerLoad = async ({ cookies }) => {
 	const cartId = cookies.get('cartId');
 
 	if (cartId) {
-		const cart = await getCart(cartId);
+		let cart = await getCart(cartId);
 
 		if (cart) {
 			const { totalQuantity } = updateCartTotals(cart.lines);
-			const updatedCart = { ...cart, totalQuantity };
-			console.log('updatedCart', updatedCart);
+			cart = { ...cart, totalQuantity };
 			return { cart };
 		}
 	} else {
