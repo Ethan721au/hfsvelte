@@ -161,6 +161,22 @@ export type ShopifyCreateCartOperation = {
 	data: { cartCreate: { cart: ShopifyCart } };
 };
 
+export type ShopifyUpdateCartOperation = {
+	data: {
+		cartLinesUpdate: {
+			cart: ShopifyCart;
+		};
+	};
+	variables: {
+		cartId: string;
+		lines: {
+			id: string;
+			merchandiseId: string;
+			quantity: number;
+		}[];
+	};
+};
+
 export type Attributes = {
 	key: string;
 	value: FormDataEntryValue;

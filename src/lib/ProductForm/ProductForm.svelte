@@ -16,11 +16,12 @@
 
 	type ProductFormProps = {
 		collection: Collection;
-		isCart?: boolean;
+		isCartEdit?: boolean;
 	};
 
 	let { cart } = getContext<CartContext>('cart');
-	let { collection, isCart }: ProductFormProps = $props();
+	console.log(cart, 'cart');
+	let { collection, isCartEdit }: ProductFormProps = $props();
 	let collectionProducts: Product[] = $state([]);
 	let selectedProduct: Product | undefined = $state(undefined);
 	let selectedVariant: ProductVariant | undefined = $state(undefined);
@@ -35,11 +36,10 @@
 	let addOns = $derived(collectionProducts?.filter((p) => p.productType === 'add-on')[0]?.variants);
 
 	$effect(() => {
-		if (cart && isCart) {
+		if (cart && isCartEdit) {
 			const cartProduct = cart.lines.find((line) =>
 				line.attributes?.some((a) => a.value === collection?.title)
 			);
-			console.log(cartProduct, 'cartProduct');
 			if (cartProduct) {
 				selectedProduct = cartProduct?.merchandise.product;
 				selectedVariant = cartProduct.merchandise.product.variants?.edges.find(
@@ -49,8 +49,12 @@
 					const matchedAddons = addOns.filter((addon) =>
 						cartProduct.attributes.some((attribute) => attribute.key === addon.title)
 					);
-
-					console.log(matchedAddons, 'testing');
+					selectedAddOns = matchedAddons.map((addon) => ({
+						id: addon.id,
+						title: addon.title,
+						checked: true,
+						value: cartProduct.attributes.find((attribute) => attribute.key === addon.title)?.value
+					}));
 				}
 			}
 		}
@@ -59,7 +63,7 @@
 	const handleSubmit = async (event: Event) => {
 		event.preventDefault();
 		const formData = new FormData(event.target as HTMLFormElement);
-		prepareCartItems(formData, collection, cart);
+		prepareCartItems(formData, collection, cart, isCartEdit);
 	};
 
 	const handleAddOnChange = (addOnId: string, checked: boolean) => {
@@ -88,8 +92,6 @@
 		if (collection) {
 			collectionProducts = await getCollectionProducts({ collection: collection.handle });
 		}
-		console.log(collectionProducts, 'collectionProducts');
-		console.log(addOns, 'addOns');
 	});
 </script>
 
@@ -145,6 +147,7 @@
 				{/if}
 			</div>
 		{/if}
-		<button type="submit">add to cart</button>
+		<button type="submit">{isCartEdit ? 'update cart' : 'add to cart'}</button>
 	</form>
+	<a href={cart.checkoutUrl}>Go to checkout</a>
 </div>

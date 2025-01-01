@@ -16,7 +16,7 @@
 
 <main>
 	{#if collection}
-		<ProductForm {collection} isCart />
+		<ProductForm {collection} />
 	{:else}
 		<div>loading...</div>
 	{/if}

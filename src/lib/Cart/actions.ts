@@ -1,5 +1,5 @@
 import { addOnsKeys } from '$lib/constants';
-import { addToCart, createCart, getCollectionProducts } from '$lib/shopify';
+import { addToCart, createCart, editCartItem, getCollectionProducts } from '$lib/shopify';
 import type {
 	Attributes,
 	Cart,
@@ -30,6 +30,14 @@ type CartAction =
 				product: Product;
 				attributes: Attributes[];
 			};
+	  }
+	| {
+			type: 'EDIT_ITEM';
+			payload: {
+				variant: ProductVariant;
+				product: Product;
+				attributes: Attributes[];
+			};
 	  };
 
 export async function addItem(
@@ -49,7 +57,14 @@ export async function addItem(
 	}
 }
 
-export const prepareCartItems = async (formData: FormData, collection: Collection, cart: Cart) => {
+export const prepareCartItems = async (
+	formData: FormData,
+	collection: Collection,
+	cart: Cart,
+	isCartEdit: boolean | undefined
+) => {
+	console.log(cart, 'cart');
+	// console.log(isCartEdit, 'isCartEdit');
 	const items = Object.fromEntries(formData.entries());
 	console.log('items', items);
 	const products = await getCollectionProducts({
@@ -85,6 +100,7 @@ export const prepareCartItems = async (formData: FormData, collection: Collectio
 	const lines = [variantId, ...addOnsIds];
 
 	pepareCart(lines, products, cart);
+
 	addItem(cart, lines);
 
 	return {
@@ -116,6 +132,23 @@ const pepareCart = (lines: Line[], products: Product[], cart: Cart) => {
 export const updateCart = (cart: Cart, action: CartAction) => {
 	switch (action.type) {
 		case 'ADD_ITEM': {
+			const { variant, product, attributes } = action.payload;
+			const existingItem = cart?.lines.find((item) => item.merchandise.id === variant.id);
+			const updatedItem = createOrUpdateCartItem(existingItem, variant, product, attributes);
+
+			const updatedLines = existingItem
+				? cart?.lines.map((item) => (item.merchandise.id === variant.id ? updatedItem : item))
+				: [...cart.lines, updatedItem];
+
+			cart.lines = updatedLines;
+
+			const { totalQuantity, cost } = updateCartTotals(updatedLines);
+			cart.totalQuantity = totalQuantity;
+			cart.cost = cost;
+
+			return;
+		}
+		case 'EDIT_ITEM': {
 			const { variant, product, attributes } = action.payload;
 			const existingItem = cart?.lines.find((item) => item.merchandise.id === variant.id);
 			const updatedItem = createOrUpdateCartItem(existingItem, variant, product, attributes);
@@ -190,6 +223,52 @@ export const updateCart = (cart: Cart, action: CartAction) => {
 	}
 };
 
+export async function updateItemQuantity(
+	prevState: any,
+	payload: {
+		merchandiseId: string;
+		quantity: number;
+	}
+) {
+	let cartId = cookies().get('cartId')?.value;
+	if (!cartId) {
+		return 'Missing cart ID';
+	}
+
+	const { merchandiseId, quantity } = payload;
+
+	try {
+		const cart = await getCart(cartId);
+		if (!cart) {
+			return 'Error fetching cart';
+		}
+
+		const lineItem = cart.lines.find((line) => line.merchandise.id === merchandiseId);
+
+		if (lineItem && lineItem.id) {
+			if (quantity === 0) {
+				await removeFromCart(cartId, [lineItem.id]);
+			} else {
+				await editCartItem(cartId, [
+					{
+						id: lineItem.id,
+						merchandiseId,
+						quantity
+					}
+				]);
+			}
+		} else if (quantity > 0) {
+			// If the item doesn't exist in the cart and quantity > 0, add it
+			await addToCart(cartId, [{ merchandiseId, quantity }]);
+		}
+
+		// revalidateTag(TAGS.cart);
+	} catch (error) {
+		console.error(error);
+		return 'Error updating item quantity';
+	}
+}
+
 // export async function AddAttribute(prevState: unknown, attributes: Attributes[]) {
 // 	const cookieStore = await cookies();
 // 	const cartId = cookieStore.get('cartId')?.value;
@@ -206,25 +285,6 @@ export const updateCart = (cart: Cart, action: CartAction) => {
 // 		console.log(error);
 // 		return 'Error adding attribute to cart';
 // 	}
-// }
-
-// export async function redirectToCheckout() {
-// 	const cookieStore = await cookies();
-// 	const cartId = cookieStore.get('cartId')?.value;
-
-// 	if (!cartId) {
-// 		// return "Missing cart ID";
-// 		return;
-// 	}
-
-// 	const cart = await getCart(cartId);
-
-// 	if (!cart) {
-// 		// return "Error fetching cart";
-// 		return;
-// 	}
-
-// 	redirect(cart.checkoutUrl);
 // }
 
 export async function createCartAndSetCookie(cookies: Cookies) {

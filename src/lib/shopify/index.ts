@@ -1,6 +1,6 @@
 import { HIDDEN_PRODUCT_TAG, SHOPIFY_GRAPHQL_API_ENDPOINT, TAGS } from '$lib/constants';
 import { isShopifyError } from '$lib/type-guards';
-import { addToCartMutation, createCartMutation } from './mutations/cart';
+import { addToCartMutation, createCartMutation, editCartItemsMutation } from './mutations/cart';
 import { getCartQuery } from './queries/cart';
 import { getCollectionProductsQuery, getCollectionsQuery } from './queries/collection';
 import type {
@@ -17,7 +17,8 @@ import type {
 	ShopifyCollectionProductsOperation,
 	ShopifyCollectionsOperation,
 	ShopifyCreateCartOperation,
-	ShopifyProduct
+	ShopifyProduct,
+	ShopifyUpdateCartOperation
 } from './types';
 
 type ExtractVariables<T> = T extends { variables: object } ? T['variables'] : never;
@@ -247,4 +248,20 @@ export async function addToCart(
 	});
 
 	return reshapeCart(res.body.data.cartLinesAdd.cart);
+}
+
+export async function editCartItem(
+	cartId: string,
+	lines: { id: string; merchandiseId: string; quantity: number }[]
+): Promise<Cart> {
+	const res = await shopifyFetch<ShopifyUpdateCartOperation>({
+		query: editCartItemsMutation,
+		variables: {
+			cartId,
+			lines
+		},
+		cache: 'no-store'
+	});
+
+	return reshapeCart(res.body.data.cartLinesUpdate.cart);
 }
