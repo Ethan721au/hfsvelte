@@ -3,6 +3,7 @@
 	import './header.css';
 	import { getContext } from 'svelte';
 	const { cart } = getContext<CartContext>('cart');
+	console.log(cart, 'cart');
 </script>
 
 <div class="header-wrapper">

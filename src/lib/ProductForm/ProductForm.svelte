@@ -3,7 +3,7 @@
 	import { prepareCartItems } from '$lib/Cart/actions';
 	import Input from '$lib/Input/Input.svelte';
 	import { getCollectionProducts } from '$lib/shopify';
-	import type { Collection, Product, ProductVariant } from '$lib/shopify/types';
+	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../../routes/+layout.svelte';
 
@@ -16,12 +16,11 @@
 
 	type ProductFormProps = {
 		collection: Collection;
-		isCartEdit?: boolean;
+		cartItem?: CartItem;
 	};
 
-	let { cart } = getContext<CartContext>('cart');
-	console.log(cart, 'cart');
-	let { collection, isCartEdit }: ProductFormProps = $props();
+	let { cart, isCartEdit } = getContext<CartContext>('cart');
+	let { collection, cartItem }: ProductFormProps = $props();
 	let collectionProducts: Product[] = $state([]);
 	let selectedProduct: Product | undefined = $state(undefined);
 	let selectedVariant: ProductVariant | undefined = $state(undefined);
@@ -36,34 +35,31 @@
 	let addOns = $derived(collectionProducts?.filter((p) => p.productType === 'add-on')[0]?.variants);
 
 	$effect(() => {
-		if (cart && isCartEdit) {
-			const cartProduct = cart.lines.find((line) =>
-				line.attributes?.some((a) => a.value === collection?.title)
-			);
-			if (cartProduct) {
-				selectedProduct = cartProduct?.merchandise.product;
-				selectedVariant = cartProduct.merchandise.product.variants?.edges.find(
-					(v) => v.node.title === cartProduct.merchandise.selectedOptions[0].value
-				)?.node;
-				if (addOns) {
-					const matchedAddons = addOns.filter((addon) =>
-						cartProduct.attributes.some((attribute) => attribute.key === addon.title)
-					);
-					selectedAddOns = matchedAddons.map((addon) => ({
-						id: addon.id,
-						title: addon.title,
-						checked: true,
-						value: cartProduct.attributes.find((attribute) => attribute.key === addon.title)?.value
-					}));
-				}
+		if (cart && $isCartEdit && cartItem) {
+			selectedProduct = cartItem.merchandise.product;
+			selectedVariant = cartItem.merchandise.product.variants?.edges.find(
+				(v) => v.node.title === cartItem.merchandise.selectedOptions[0].value
+			)?.node;
+			if (addOns) {
+				const matchedAddons = addOns.filter((addon) =>
+					cartItem.attributes.some((attribute) => attribute.key === addon.title)
+				);
+				selectedAddOns = matchedAddons.map((addon) => ({
+					id: addon.id,
+					title: addon.title,
+					checked: true,
+					value: cartItem.attributes.find((attribute) => attribute.key === addon.title)?.value
+				}));
 			}
 		}
 	});
 
 	const handleSubmit = async (event: Event) => {
+		console.log(event, 'event');
 		event.preventDefault();
 		const formData = new FormData(event.target as HTMLFormElement);
-		prepareCartItems(formData, collection, cart, isCartEdit);
+
+		prepareCartItems(formData, collection, cart, $isCartEdit);
 	};
 
 	const handleAddOnChange = (addOnId: string, checked: boolean) => {
@@ -147,7 +143,10 @@
 				{/if}
 			</div>
 		{/if}
-		<button type="submit">{isCartEdit ? 'update cart' : 'add to cart'}</button>
+		<button type="submit" name="edit">{$isCartEdit ? 'update item' : 'add to cart'}</button>
+		{#if isCartEdit}
+			<button type="submit" name="delete">remove item</button>
+		{/if}
 	</form>
-	<a href={cart.checkoutUrl}>Go to checkout</a>
+	<!-- <a href={cart.checkoutUrl}>Go to checkout</a> -->
 </div>

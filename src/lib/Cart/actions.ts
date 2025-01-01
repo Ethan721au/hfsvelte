@@ -63,8 +63,6 @@ export const prepareCartItems = async (
 	cart: Cart,
 	isCartEdit: boolean | undefined
 ) => {
-	console.log(cart, 'cart');
-	// console.log(isCartEdit, 'isCartEdit');
 	const items = Object.fromEntries(formData.entries());
 	console.log('items', items);
 	const products = await getCollectionProducts({
@@ -202,26 +200,50 @@ export const updateCart = (cart: Cart, action: CartAction) => {
 		};
 	}
 
-	function updateCartTotals(lines: CartItem[]): Pick<Cart, 'totalQuantity' | 'cost'> {
-		const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
-		const totalAmount = lines.reduce((sum, item) => sum + Number(item.cost.totalAmount.amount), 0);
+	// function updateCartTotals(lines: CartItem[]): Pick<Cart, 'totalQuantity' | 'cost'> {
+	// 	const products = lines.filter((line) => !addOnsKeys.includes(line.merchandise.title));
 
-		const currencyCode = lines[0]?.cost.totalAmount.currencyCode ?? 'USD';
+	// 	const totalQuantity = products.reduce((sum, item) => sum + item.quantity, 0);
 
-		return {
-			totalQuantity,
-			cost: {
-				subtotalAmount: { amount: totalAmount.toString(), currencyCode },
-				totalAmount: { amount: totalAmount.toString(), currencyCode },
-				totalTaxAmount: { amount: '0', currencyCode }
-			}
-		};
-	}
+	// 	// const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
+	// 	const totalAmount = lines.reduce((sum, item) => sum + Number(item.cost.totalAmount.amount), 0);
+
+	// 	const currencyCode = lines[0]?.cost.totalAmount.currencyCode ?? 'USD';
+
+	// 	return {
+	// 		totalQuantity,
+	// 		cost: {
+	// 			subtotalAmount: { amount: totalAmount.toString(), currencyCode },
+	// 			totalAmount: { amount: totalAmount.toString(), currencyCode },
+	// 			totalTaxAmount: { amount: '0', currencyCode }
+	// 		}
+	// 	};
+	// }
 
 	function calculateItemCost(quantity: number, price: string): string {
 		return (Number(price) * quantity).toString();
 	}
 };
+
+export function updateCartTotals(lines: CartItem[]): Pick<Cart, 'totalQuantity' | 'cost'> {
+	const products = lines.filter((line) => !addOnsKeys.includes(line.merchandise.title));
+
+	const totalQuantity = products.reduce((sum, item) => sum + item.quantity, 0);
+
+	// const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
+	const totalAmount = lines.reduce((sum, item) => sum + Number(item.cost.totalAmount.amount), 0);
+
+	const currencyCode = lines[0]?.cost.totalAmount.currencyCode ?? 'USD';
+
+	return {
+		totalQuantity,
+		cost: {
+			subtotalAmount: { amount: totalAmount.toString(), currencyCode },
+			totalAmount: { amount: totalAmount.toString(), currencyCode },
+			totalTaxAmount: { amount: '0', currencyCode }
+		}
+	};
+}
 
 export async function updateItemQuantity(
 	prevState: any,
