@@ -16,7 +16,7 @@ type Line = {
 	attributes: { key: string; value: FormDataEntryValue }[];
 };
 
-type UpdateType = 'plus' | 'minus' | 'delete';
+export type UpdateType = 'plus' | 'minus' | 'delete' | 'edit' | 'add';
 
 type CartAction =
 	| {
@@ -61,7 +61,7 @@ export const prepareCartItems = async (
 	formData: FormData,
 	collection: Collection,
 	cart: Cart,
-	isCartEdit: boolean | undefined
+	updateType: UpdateType
 ) => {
 	const items = Object.fromEntries(formData.entries());
 	console.log('items', items);
@@ -97,9 +97,9 @@ export const prepareCartItems = async (
 
 	const lines = [variantId, ...addOnsIds];
 
-	pepareCart(lines, products, cart);
+	pepareCart(lines, products, cart, updateType);
 
-	addItem(cart, lines);
+	// addItem(cart, lines);
 
 	return {
 		lines,
@@ -107,7 +107,7 @@ export const prepareCartItems = async (
 	};
 };
 
-const pepareCart = (lines: Line[], products: Product[], cart: Cart) => {
+const pepareCart = (lines: Line[], products: Product[], cart: Cart, updateType: UpdateType) => {
 	lines.map((line) => {
 		const product = products.find((p) => p.variants.some((v) => v.id === line.merchandiseId));
 		const variant = product?.variants.find((v) => v.id === line.merchandiseId);
@@ -179,7 +179,7 @@ export const updateCart = (cart: Cart, action: CartAction) => {
 		return {
 			id: existingItem?.id,
 			quantity,
-			attributes: product.productType === 'add-on' ? attributes : [],
+			attributes,
 			cost: {
 				totalAmount: {
 					amount: totalAmount,

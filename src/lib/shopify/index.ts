@@ -252,7 +252,7 @@ export async function addToCart(
 
 export async function editCartItem(
 	cartId: string,
-	lines: { id: string; merchandiseId: string; quantity: number }[]
+	lines: { id: string; merchandiseId: string; quantity: number; attributes: Attributes[] }[]
 ): Promise<Cart> {
 	const res = await shopifyFetch<ShopifyUpdateCartOperation>({
 		query: editCartItemsMutation,

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { priceFormatter } from '$lib';
-	import { prepareCartItems } from '$lib/Cart/actions';
+	import { prepareCartItems, type UpdateType } from '$lib/Cart/actions';
 	import Input from '$lib/Input/Input.svelte';
 	import { getCollectionProducts } from '$lib/shopify';
 	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
@@ -58,8 +58,9 @@
 		console.log(event, 'event');
 		event.preventDefault();
 		const formData = new FormData(event.target as HTMLFormElement);
-
-		prepareCartItems(formData, collection, cart, $isCartEdit);
+		const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
+		const updateType = submitter?.name as UpdateType;
+		prepareCartItems(formData, collection, cart, updateType);
 	};
 
 	const handleAddOnChange = (addOnId: string, checked: boolean) => {
@@ -143,8 +144,10 @@
 				{/if}
 			</div>
 		{/if}
-		<button type="submit" name="edit">{$isCartEdit ? 'update item' : 'add to cart'}</button>
-		{#if isCartEdit}
+		<button type="submit" name={$isCartEdit ? 'edit' : 'add'}
+			>{$isCartEdit ? 'update item' : 'add to cart'}</button
+		>
+		{#if $isCartEdit}
 			<button type="submit" name="delete">remove item</button>
 		{/if}
 	</form>
