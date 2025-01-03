@@ -8,13 +8,9 @@
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
 
 	const { cart, isCartEdit } = getContext<CartContext>('cart');
-	console.log($isCartEdit, 'isCartEdit');
 	let collections: Collection[] = $state([]);
 	let collection: Collection | undefined = $state(undefined);
 	let cartItem: CartItem | undefined = $state(undefined);
-
-	console.log(cart, 'cart');
-
 	let cartItems: CartItem[] = $derived(
 		cart?.lines.filter((line) => !addOnsKeys.includes(line.merchandise.title))
 	);

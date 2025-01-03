@@ -96,8 +96,9 @@ export const prepareCartItems = async (
 	};
 
 	const lines = [variantId, ...addOnsIds];
+	console.log(lines, products, cart, updateType);
 
-	pepareCart(lines, products, cart, updateType);
+	// pepareCart(lines, products, cart, updateType);
 
 	// addItem(cart, lines);
 
