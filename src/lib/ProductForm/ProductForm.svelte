@@ -60,7 +60,7 @@
 		const formData = new FormData(event.target as HTMLFormElement);
 		const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
 		const updateType = submitter?.name as UpdateType;
-		prepareCartItems(formData, collection, cart, updateType);
+		prepareCartItems(formData, collection, cart, updateType, cartItem);
 	};
 
 	const handleAddOnChange = (addOnId: string, checked: boolean) => {
