@@ -34,22 +34,40 @@ export const prepareCartLines = (
 };
 
 export const deleteItem = (cart: Cart, cartItem: CartItem) => {
-	// const productLine = cartItem.id;
-	const addOnLine = cart.lines.find((line) =>
+	const linesToRemove = [cartItem.id];
+
+	const addOnLines = cart.lines.filter((line) =>
 		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
 	);
-	console.log(addOnLine, 'addOnLine');
+	console.log(addOnLines, 'addOnLine');
 
-	if (!addOnLine) {
-		removeFromCart(cart.id, [cartItem.id]);
-	} else if (addOnLine && addOnLine?.quantity - 1 === 0) {
-		// const updatedCart = cart.lines.filter(
-		// 	(line) => line.id !== addOnLine.id && line.id !== cartItem.id
-		// );
-		removeFromCart(cart.id, [addOnLine.id, cartItem.id]);
-	}
+	addOnLines.forEach((addOnLine) => {
+		if (addOnLine.quantity - 1 === 0) {
+			linesToRemove.push(addOnLine.id);
+		} else {
+			console.log(addOnLine.id, 'remove one');
+		}
+	});
 
-	// console.log(addOnLine, 'addOnLine');
+	// if (addOnLine && addOnLine?.quantity - 1 === 0) {
+	// 	linesToRemove.push(addOnLine.id);
+	// }
+
+	// if (!addOnLine) {
+	// 	// removeFromCart(cart.id, [cartItem.id]);
+	// 	// linesToRemove.push(cartItem.id);
+	// 	console.log('no addOnLine');
+	// } else if (addOnLine && addOnLine?.quantity - 1 === 0) {
+	// 	// const updatedCart = cart.lines.filter(
+	// 	// 	(line) => line.id !== addOnLine.id && line.id !== cartItem.id
+	// 	// );
+	// 	// removeFromCart(cart.id, [addOnLine.id, cartItem.id]);
+	// 	linesToRemove.push(addOnLine.id);
+	// }
+
+	console.log(linesToRemove, 'linesToRemove');
+
+	// removeFromCart(cart.id, linesToRemove);
 };
 
 function createOrUpdateCartItem(
