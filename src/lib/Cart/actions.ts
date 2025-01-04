@@ -1,5 +1,11 @@
 import { addOnsKeys } from '$lib/constants';
-import { addToCart, createCart, editCartItem, getCollectionProducts } from '$lib/shopify';
+import {
+	addToCart,
+	createCart,
+	editCartItem,
+	getCollectionProducts,
+	removeFromCart
+} from '$lib/shopify';
 import type {
 	Attributes,
 	Cart,
@@ -20,11 +26,11 @@ export type UpdateType = 'plus' | 'minus' | 'delete' | 'edit' | 'add';
 
 type CartAction =
 	| {
-			type: 'UPDATE_ITEM';
+			updateType: 'UPDATE_ITEM';
 			payload: { merchandiseId: string; updateType: UpdateType };
 	  }
 	| {
-			type: 'ADD_ITEM';
+			updateType: 'add';
 			payload: {
 				variant: ProductVariant;
 				product: Product;
@@ -32,7 +38,7 @@ type CartAction =
 			};
 	  }
 	| {
-			type: 'EDIT_ITEM';
+			updateType: 'EDIT_ITEM';
 			payload: {
 				variant: ProductVariant;
 				product: Product;
@@ -65,7 +71,6 @@ export const prepareCartItems = async (
 	cartItem?: CartItem
 ) => {
 	const items = Object.fromEntries(formData.entries());
-	console.log('items', items);
 	const products = await getCollectionProducts({
 		collection: items.collection as string
 	});
@@ -97,13 +102,13 @@ export const prepareCartItems = async (
 	};
 
 	const lines = [variantId, ...addOnsIds];
-	console.log(lines, 'lines');
-	console.log(products, 'products');
-	console.log(cart, 'cart');
-	console.log(updateType, 'updateType');
-	console.log(cartItem, 'cartItem');
+	// console.log(lines, 'lines');
+	// console.log(products, 'products');
+	// console.log(cart, 'cart');
+	// console.log(updateType, 'updateType');
+	// console.log(cartItem, 'cartItem');
 
-	// pepareCart(lines, products, cart, updateType);
+	// pepareCart(lines, products, cart, updateType, cartItem);
 
 	// addItem(cart, lines);
 
@@ -113,7 +118,13 @@ export const prepareCartItems = async (
 	};
 };
 
-const pepareCart = (lines: Line[], products: Product[], cart: Cart, updateType: UpdateType) => {
+const pepareCart = (
+	lines: Line[],
+	products: Product[],
+	cart: Cart,
+	updateType: UpdateType,
+	cartItem?: CartItem
+) => {
 	lines.map((line) => {
 		const product = products.find((p) => p.variants.some((v) => v.id === line.merchandiseId));
 		const variant = product?.variants.find((v) => v.id === line.merchandiseId);
@@ -124,7 +135,7 @@ const pepareCart = (lines: Line[], products: Product[], cart: Cart, updateType: 
 
 		if (variant && product) {
 			updateCart(cart, {
-				type: 'ADD_ITEM',
+				updateType,
 				payload: { variant, product, attributes }
 			});
 		} else {
@@ -134,8 +145,8 @@ const pepareCart = (lines: Line[], products: Product[], cart: Cart, updateType: 
 };
 
 export const updateCart = (cart: Cart, action: CartAction) => {
-	switch (action.type) {
-		case 'ADD_ITEM': {
+	switch (action.updateType) {
+		case 'add': {
 			const { variant, product, attributes } = action.payload;
 			const existingItem = cart?.lines.find((item) => item.merchandise.id === variant.id);
 			const updatedItem = createOrUpdateCartItem(existingItem, variant, product, attributes);

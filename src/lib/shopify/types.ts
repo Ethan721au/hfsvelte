@@ -77,6 +77,7 @@ export type ShopifyProduct = {
 	tags: string[];
 	productType: string;
 	updatedAt: string;
+	collections: Connection<ShopifyCollection>;
 };
 
 export type Connection<T> = {
@@ -244,5 +245,17 @@ export type ShopifyUpdateCartAttributesOperation = {
 	variables: {
 		cartId: string;
 		attributes: Attributes[];
+	};
+};
+
+export type ShopifyRemoveFromCartOperation = {
+	data: {
+		cartLinesRemove: {
+			cart: ShopifyCart;
+		};
+	};
+	variables: {
+		cartId: string;
+		lineIds: string[];
 	};
 };

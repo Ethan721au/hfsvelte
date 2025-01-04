@@ -1,18 +1,12 @@
 <script lang="ts">
 	import { priceFormatter } from '$lib';
-	import { prepareCartItems, type UpdateType } from '$lib/Cart/actions';
+	import { addItem, prepareCartItems, type UpdateType } from '$lib/Cart/actions';
 	import Input from '$lib/Input/Input.svelte';
 	import { getCollectionProducts } from '$lib/shopify';
 	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../../routes/+layout.svelte';
-
-	type AddOn = {
-		id: string;
-		title: string;
-		checked: boolean;
-		value?: FormDataEntryValue | undefined;
-	};
+	import { deleteItem, prepareCartLines, type AddOn } from '$lib/Cart/actions copy';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -55,15 +49,44 @@
 	});
 
 	const handleSubmit = async (event: Event) => {
-		console.log(event, 'event');
 		event.preventDefault();
-		const formData = new FormData(event.target as HTMLFormElement);
+		// const formData = new FormData(event.target as HTMLFormElement);
 		const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
 		const updateType = submitter?.name as UpdateType;
-		prepareCartItems(formData, collection, cart, updateType, cartItem);
+		// prepareCartItems(formData, collection, cart, updateType, cartItem);
+
+		///////////////
+		const lines = prepareCartLines(selectedProduct, selectedVariant, selectedAddOns);
+		switch (updateType) {
+			case 'add':
+				console.log('add');
+				addItem(cart, lines);
+				break;
+			case 'delete':
+				console.log('delete');
+				console.log(cartItem, 'cartItem');
+				console.log(cart, 'cart');
+
+				deleteItem(cart, cartItem);
+
+				// editItem(cart, lines);
+				break;
+			case 'edit':
+				console.log('edit');
+
+				// deleteItem(cart, cartItem);
+				break;
+		}
+
+		// const items = Object.fromEntries(formData.entries());
+		// console.log(selectedProduct, 'selectedProduct');
+		// console.log(selectedVariant, 'selectedVariant');
+		// console.log(selectedAddOns, 'selectedAddOns');
+
+		// addItem(cart, lines);
 	};
 
-	const handleAddOnChange = (addOnId: string, checked: boolean) => {
+	const handleAddOnChange = (addOnId: string, addOnTitle: string, checked: boolean) => {
 		const isExisting = selectedAddOns.some((a) => a.id === addOnId);
 		if (isExisting) {
 			selectedAddOns = selectedAddOns.map((addOn) =>
@@ -72,7 +95,7 @@
 		} else {
 			selectedAddOns.push({
 				id: addOnId,
-				title: addOnId,
+				title: addOnTitle,
 				checked,
 				value: ''
 			});
@@ -128,7 +151,7 @@
 							label={`${addOn.title} (+${priceFormatter(addOn?.price.amount, 0)})`}
 							name={addOn.title}
 							checked={selectedAddOns?.find((a) => a.id === addOn.id)?.checked || false}
-							onChange={(checked) => handleAddOnChange(addOn.id, checked as boolean)}
+							onChange={(checked) => handleAddOnChange(addOn.id, addOn.title, checked as boolean)}
 						/>
 						{#if selectedAddOns.find((a) => a.id === addOn.id)?.checked}
 							<Input
@@ -148,7 +171,11 @@
 			>{$isCartEdit ? 'update item' : 'add to cart'}</button
 		>
 		{#if $isCartEdit}
-			<button type="submit" name="delete">remove item</button>
+			<button type="submit" name="delete"
+				>{cartItem!.quantity > 1
+					? `remove ALL items (${cartItem?.quantity}) from cart`
+					: 'remove item from cart'}</button
+			>
 		{/if}
 	</form>
 	<!-- <a href={cart.checkoutUrl}>Go to checkout</a> -->
