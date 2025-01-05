@@ -1,4 +1,4 @@
-import { removeFromCart } from '$lib/shopify';
+import { addToCart, editCartItem, removeFromCart } from '$lib/shopify';
 import type { Attributes, Cart, CartItem, Product, ProductVariant } from '$lib/shopify/types';
 
 export type AddOn = {
@@ -33,7 +33,24 @@ export const prepareCartLines = (
 	return [product, ...addOns];
 };
 
-export const deleteItem = (cart: Cart, cartItem: CartItem) => {
+export async function addItem(
+	cart: Cart,
+	lines: { merchandiseId: string; quantity: number; attributes: Attributes[] }[]
+) {
+	if (!cart || !lines) {
+		return 'Error adding item to cart';
+	}
+
+	try {
+		await addToCart(cart.id, lines);
+		return 'Item added to cart';
+	} catch (error) {
+		console.log(error);
+		return 'Error adding item to cart';
+	}
+}
+
+export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 	const linesToRemove = [cartItem.id];
 
 	const addOnLines = cart.lines.filter((line) =>
@@ -41,33 +58,22 @@ export const deleteItem = (cart: Cart, cartItem: CartItem) => {
 	);
 	console.log(addOnLines, 'addOnLine');
 
-	addOnLines.forEach((addOnLine) => {
+	addOnLines.forEach(async (addOnLine) => {
 		if (addOnLine.quantity - 1 === 0) {
 			linesToRemove.push(addOnLine.id);
 		} else {
-			console.log(addOnLine.id, 'remove one');
+			await editCartItem(cart.id, [
+				{
+					id: addOnLine.id,
+					merchandiseId: addOnLine.merchandise.id,
+					quantity: addOnLine.quantity - 1,
+					attributes: addOnLine.attributes
+				}
+			]);
 		}
 	});
 
-	// if (addOnLine && addOnLine?.quantity - 1 === 0) {
-	// 	linesToRemove.push(addOnLine.id);
-	// }
-
-	// if (!addOnLine) {
-	// 	// removeFromCart(cart.id, [cartItem.id]);
-	// 	// linesToRemove.push(cartItem.id);
-	// 	console.log('no addOnLine');
-	// } else if (addOnLine && addOnLine?.quantity - 1 === 0) {
-	// 	// const updatedCart = cart.lines.filter(
-	// 	// 	(line) => line.id !== addOnLine.id && line.id !== cartItem.id
-	// 	// );
-	// 	// removeFromCart(cart.id, [addOnLine.id, cartItem.id]);
-	// 	linesToRemove.push(addOnLine.id);
-	// }
-
-	console.log(linesToRemove, 'linesToRemove');
-
-	// removeFromCart(cart.id, linesToRemove);
+	await removeFromCart(cart.id, linesToRemove);
 };
 
 function createOrUpdateCartItem(

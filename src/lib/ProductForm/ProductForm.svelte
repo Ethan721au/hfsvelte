@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { priceFormatter } from '$lib';
-	import { addItem, prepareCartItems, type UpdateType } from '$lib/Cart/actions';
+	import { prepareCartItems, type UpdateType } from '$lib/Cart/actions';
 	import Input from '$lib/Input/Input.svelte';
 	import { getCollectionProducts } from '$lib/shopify';
 	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../../routes/+layout.svelte';
-	import { deleteItem, prepareCartLines, type AddOn } from '$lib/Cart/actions copy';
+	import { addItem, deleteItem, prepareCartLines, type AddOn } from '$lib/Cart/actions copy';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -27,6 +27,7 @@
 		productsWithVariants.find((p) => p.title === selectedProduct?.title)?.variants
 	);
 	let addOns = $derived(collectionProducts?.filter((p) => p.productType === 'add-on')[0]?.variants);
+	let message = $state('');
 
 	$effect(() => {
 		if (cart && $isCartEdit && cartItem) {
@@ -59,17 +60,19 @@
 		const lines = prepareCartLines(selectedProduct, selectedVariant, selectedAddOns);
 		switch (updateType) {
 			case 'add':
-				console.log('add');
-				addItem(cart, lines);
+				message = await addItem(cart, lines);
 				break;
 			case 'delete':
 				console.log('delete');
-				console.log(cartItem, 'cartItem');
 				console.log(cart, 'cart');
 
+				if (!cartItem) {
+					return 'No item in cart';
+				}
 				deleteItem(cart, cartItem);
 
-				// editItem(cart, lines);
+				isCartEdit.update(() => false);
+
 				break;
 			case 'edit':
 				console.log('edit');
@@ -170,6 +173,7 @@
 		<button type="submit" name={$isCartEdit ? 'edit' : 'add'}
 			>{$isCartEdit ? 'update item' : 'add to cart'}</button
 		>
+		<div>{message}</div>
 		{#if $isCartEdit}
 			<button type="submit" name="delete"
 				>{cartItem!.quantity > 1

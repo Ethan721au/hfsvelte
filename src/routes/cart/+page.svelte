@@ -23,11 +23,26 @@
 	onMount(async () => {
 		collections = await getCollections();
 	});
+
+	const calculateTotalCosts = (item: CartItem) => {
+		const productCosts = Number(item.cost.totalAmount.amount);
+
+		const addOnLines = cart.lines.filter((line) =>
+			item.attributes.some((attr) => attr.key === line.merchandise.title)
+		);
+		const addOnCosts = addOnLines.reduce(
+			(acc, line) => acc + Number(line.cost.totalAmount.amount),
+			0
+		);
+		const totalCosts = productCosts + addOnCosts;
+
+		return priceFormatter(totalCosts, 2);
+	};
 </script>
 
 <main>
 	<div class="cart-page-wrapper">
-		<a href="/">
+		<a href="/send-in-item">
 			<strong>Home</strong>
 		</a>
 		{#if cartItems.length > 0}
@@ -46,7 +61,7 @@
 							<p>{item.quantity}</p>
 							<div>-</div>
 						</div>
-						<div>{priceFormatter(item.cost.totalAmount.amount, 2)}</div>
+						<div>{calculateTotalCosts(item)}</div>
 					</div>
 					<button onclick={() => handleCartEdit(item)}>Edit item</button>
 				</div>
