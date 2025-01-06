@@ -56,12 +56,14 @@ export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 	const addOnLines = cart.lines.filter((line) =>
 		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
 	);
-	console.log(addOnLines, 'addOnLine');
+	// console.log(addOnLines, 'addOnLine');
 
 	addOnLines.forEach(async (addOnLine) => {
 		if (addOnLine.quantity - 1 === 0) {
+			// console.log(addOnLine, 'addOnLine to remove');
 			linesToRemove.push(addOnLine.id);
 		} else {
+			// console.log(addOnLine, 'addOnLine to update');
 			await editCartItem(cart.id, [
 				{
 					id: addOnLine.id,
@@ -72,6 +74,8 @@ export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 			]);
 		}
 	});
+
+	// console.log(linesToRemove, 'linesToRemove');
 
 	await removeFromCart(cart.id, linesToRemove);
 };

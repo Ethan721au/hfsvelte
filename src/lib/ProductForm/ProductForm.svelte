@@ -60,6 +60,7 @@
 		const lines = prepareCartLines(selectedProduct, selectedVariant, selectedAddOns);
 		switch (updateType) {
 			case 'add':
+				message = 'adding to cart...';
 				message = await addItem(cart, lines);
 				break;
 			case 'delete':
