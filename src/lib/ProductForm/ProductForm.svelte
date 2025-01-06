@@ -1,4 +1,5 @@
 <script lang="ts">
+	// import { Loader } from '@svelteuidev/core';
 	import { priceFormatter } from '$lib';
 	import { prepareCartItems, type UpdateType } from '$lib/Cart/actions';
 	import Input from '$lib/Input/Input.svelte';
@@ -72,7 +73,7 @@
 				}
 				deleteItem(cart, cartItem);
 
-				isCartEdit.update(() => false);
+				// isCartEdit.update(() => false);
 
 				break;
 			case 'edit':
@@ -174,7 +175,7 @@
 		<button type="submit" name={$isCartEdit ? 'edit' : 'add'}
 			>{$isCartEdit ? 'update item' : 'add to cart'}</button
 		>
-		<div>{message}</div>
+		<!-- <div><Loader /></div> -->
 		{#if $isCartEdit}
 			<button type="submit" name="delete"
 				>{cartItem!.quantity > 1

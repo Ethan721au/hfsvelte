@@ -66,7 +66,7 @@ export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 			// console.log(addOnLine, 'addOnLine to update');
 			await editCartItem(cart.id, [
 				{
-					id: addOnLine.id,
+					id: addOnLine.id!,
 					merchandiseId: addOnLine.merchandise.id,
 					quantity: addOnLine.quantity - 1,
 					attributes: addOnLine.attributes
