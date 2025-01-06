@@ -1,3 +1,4 @@
+import { addOnsKeys } from '$lib/constants';
 import { addToCart, editCartItem, removeFromCart } from '$lib/shopify';
 import type { Attributes, Cart, CartItem, Product, ProductVariant } from '$lib/shopify/types';
 
@@ -58,6 +59,8 @@ export async function addItem(
 }
 
 export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
+	cart.lines = cart.lines.filter((line) => line.id !== cartItem.id);
+
 	const linesToRemove = [cartItem.id!];
 	const linesToEdit: Line[] = [];
 
@@ -67,6 +70,11 @@ export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 
 	addOnLines.forEach((addOnLine) => {
 		if (addOnLine.quantity - 1 === 0) {
+			const updatedLines = cart.lines.filter((line) => line.id !== addOnLine.id);
+			cart.lines = updatedLines;
+			const { totalQuantity, cost } = updateCartTotals(updatedLines);
+			cart.totalQuantity = totalQuantity;
+			cart.cost = cost;
 			linesToRemove.push(addOnLine.id!);
 		} else {
 			linesToEdit.push({
@@ -78,9 +86,49 @@ export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 		}
 	});
 
-	await removeFromCart(cart.id, linesToRemove);
-	await editCartItem(cart.id, linesToEdit);
+	// await removeFromCart(cart.id, linesToRemove);
+	// await editCartItem(cart.id, linesToEdit);
 	return 'Item removed from cart';
+};
+
+function calculateItemCost(quantity: number, price: string): string {
+	return (Number(price) * quantity).toString();
+}
+
+export const addItemToCart = async (
+	cart: Cart,
+	selectedProduct: Product,
+	selectedVariant: ProductVariant,
+	selectedAddOns: AddOn[]
+) => {
+	// update frontend cart:
+	const attributes = [
+		{ key: 'Order type', value: selectedProduct.collections.edges[0].node.title },
+		...selectedAddOns.map((addOn) => {
+			return { key: addOn.title, value: addOn.value! };
+		})
+	];
+	const existingItem = cart?.lines.find((item) => item.merchandise.id === selectedVariant.id);
+	const updatedItem = createOrUpdateCartItem(
+		existingItem,
+		selectedVariant,
+		selectedProduct,
+		attributes
+	);
+	const updatedLines = existingItem
+		? cart?.lines.map((item) => (item.merchandise.id === selectedVariant.id ? updatedItem : item))
+		: [...cart.lines, updatedItem];
+
+	cart.lines = updatedLines;
+
+	const { totalQuantity, cost } = updateCartTotals(updatedLines);
+	cart.totalQuantity = totalQuantity;
+	cart.cost = cost;
+
+	// update backend cart:
+	const lines = prepareCartLines(selectedProduct, selectedVariant, selectedAddOns);
+
+	return await addItem(cart, lines);
 };
 
 function createOrUpdateCartItem(
@@ -116,6 +164,22 @@ function createOrUpdateCartItem(
 	};
 }
 
-function calculateItemCost(quantity: number, price: string): string {
-	return (Number(price) * quantity).toString();
+export function updateCartTotals(lines: CartItem[]): Pick<Cart, 'totalQuantity' | 'cost'> {
+	const products = lines.filter((line) => !addOnsKeys.includes(line.merchandise.title));
+
+	const totalQuantity = products.reduce((sum, item) => sum + item.quantity, 0);
+
+	// const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
+	const totalAmount = lines.reduce((sum, item) => sum + Number(item.cost.totalAmount.amount), 0);
+
+	const currencyCode = lines[0]?.cost.totalAmount.currencyCode ?? 'USD';
+
+	return {
+		totalQuantity,
+		cost: {
+			subtotalAmount: { amount: totalAmount.toString(), currencyCode },
+			totalAmount: { amount: totalAmount.toString(), currencyCode },
+			totalTaxAmount: { amount: '0', currencyCode }
+		}
+	};
 }

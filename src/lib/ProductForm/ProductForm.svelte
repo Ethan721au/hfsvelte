@@ -7,7 +7,13 @@
 	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../../routes/+layout.svelte';
-	import { addItem, deleteItem, prepareCartLines, type AddOn } from '$lib/Cart/actions copy';
+	import {
+		addItem,
+		addItemToCart,
+		deleteItem,
+		prepareCartLines,
+		type AddOn
+	} from '$lib/Cart/actions copy';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -29,7 +35,6 @@
 	);
 	let addOns = $derived(collectionProducts?.filter((p) => p.productType === 'add-on')[0]?.variants);
 	let message = $state('');
-	console.log(message, 'message');
 
 	$effect(() => {
 		if (cart && $isCartEdit && cartItem) {
@@ -59,9 +64,11 @@
 		// prepareCartItems(formData, collection, cart, updateType, cartItem);
 
 		///////////////
-		const lines = prepareCartLines(selectedProduct, selectedVariant, selectedAddOns);
 		switch (updateType) {
 			case 'add':
+				const testing = addItemToCart(cart, selectedProduct!, selectedVariant!, selectedAddOns);
+				console.log(testing, 'testing');
+				const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
 				message = 'adding to cart...';
 				message = await addItem(cart, lines);
 				break;
@@ -73,11 +80,11 @@
 					return 'No item in cart';
 				}
 				message = await deleteItem(cart, cartItem);
-				if (message === 'Item removed from cart') {
-					isCartEdit.update(() => false);
-				}
+				// if (message === 'Item removed from cart') {
+				// 	isCartEdit.update(() => false);
+				// }
 
-				// isCartEdit.update(() => false);
+				isCartEdit.update(() => false);
 
 				break;
 			case 'edit':
