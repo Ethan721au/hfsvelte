@@ -8,6 +8,13 @@ export type AddOn = {
 	value?: FormDataEntryValue | undefined;
 };
 
+type Line = {
+	id: string;
+	merchandiseId: string;
+	quantity: number;
+	attributes: { key: string; value: FormDataEntryValue }[];
+};
+
 export const prepareCartLines = (
 	selectedProduct: Product,
 	selectedVariant: ProductVariant,
@@ -51,33 +58,29 @@ export async function addItem(
 }
 
 export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
-	const linesToRemove = [cartItem.id];
+	const linesToRemove = [cartItem.id!];
+	const linesToEdit: Line[] = [];
 
 	const addOnLines = cart.lines.filter((line) =>
 		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
 	);
-	// console.log(addOnLines, 'addOnLine');
 
-	addOnLines.forEach(async (addOnLine) => {
+	addOnLines.forEach((addOnLine) => {
 		if (addOnLine.quantity - 1 === 0) {
-			// console.log(addOnLine, 'addOnLine to remove');
-			linesToRemove.push(addOnLine.id);
+			linesToRemove.push(addOnLine.id!);
 		} else {
-			// console.log(addOnLine, 'addOnLine to update');
-			await editCartItem(cart.id, [
-				{
-					id: addOnLine.id!,
-					merchandiseId: addOnLine.merchandise.id,
-					quantity: addOnLine.quantity - 1,
-					attributes: addOnLine.attributes
-				}
-			]);
+			linesToEdit.push({
+				id: addOnLine.id!,
+				merchandiseId: addOnLine.merchandise.id,
+				quantity: addOnLine.quantity - 1,
+				attributes: addOnLine.attributes
+			});
 		}
 	});
 
-	// console.log(linesToRemove, 'linesToRemove');
-
 	await removeFromCart(cart.id, linesToRemove);
+	await editCartItem(cart.id, linesToEdit);
+	return 'Item removed from cart';
 };
 
 function createOrUpdateCartItem(

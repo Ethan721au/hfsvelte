@@ -36,7 +36,7 @@
 		);
 		const totalCosts = productCosts + addOnCosts;
 
-		return priceFormatter(totalCosts, 2);
+		return priceFormatter(totalCosts, 0);
 	};
 </script>
 

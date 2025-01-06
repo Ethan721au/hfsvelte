@@ -29,6 +29,7 @@
 	);
 	let addOns = $derived(collectionProducts?.filter((p) => p.productType === 'add-on')[0]?.variants);
 	let message = $state('');
+	console.log(message, 'message');
 
 	$effect(() => {
 		if (cart && $isCartEdit && cartItem) {
@@ -71,7 +72,10 @@
 				if (!cartItem) {
 					return 'No item in cart';
 				}
-				deleteItem(cart, cartItem);
+				message = await deleteItem(cart, cartItem);
+				if (message === 'Item removed from cart') {
+					isCartEdit.update(() => false);
+				}
 
 				// isCartEdit.update(() => false);
 
@@ -175,7 +179,7 @@
 		<button type="submit" name={$isCartEdit ? 'edit' : 'add'}
 			>{$isCartEdit ? 'update item' : 'add to cart'}</button
 		>
-		<!-- <div><Loader /></div> -->
+		<div>{message}</div>
 		{#if $isCartEdit}
 			<button type="submit" name="delete"
 				>{cartItem!.quantity > 1
