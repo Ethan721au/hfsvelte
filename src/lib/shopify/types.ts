@@ -91,8 +91,8 @@ export type Money = {
 
 export type ProductVariant = {
 	id: string;
-	handle: string;
-	description: string;
+	handle?: string;
+	description?: string;
 	title: string;
 	availableForSale: boolean;
 	selectedOptions: {
@@ -100,7 +100,7 @@ export type ProductVariant = {
 		value: string;
 	}[];
 	price: Money;
-	featuredImage: Image;
+	featuredImage?: Image;
 };
 
 export type Product = Omit<ShopifyProduct, 'variants' | 'images'> & {

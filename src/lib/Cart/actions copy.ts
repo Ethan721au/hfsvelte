@@ -1,6 +1,13 @@
 import { addOnsKeys } from '$lib/constants';
 import { addToCart, editCartItem, removeFromCart } from '$lib/shopify';
 import type { Attributes, Cart, CartItem, Product, ProductVariant } from '$lib/shopify/types';
+import {
+	addItem,
+	calculateItemCost,
+	createOrUpdateCartItem,
+	prepareCartLines,
+	updateCartTotals
+} from './utils';
 
 export type AddOn = {
 	id: string;
@@ -16,47 +23,70 @@ type Line = {
 	attributes: { key: string; value: FormDataEntryValue }[];
 };
 
-export const prepareCartLines = (
+export const addItemToCart = async (
+	cart: Cart,
 	selectedProduct: Product,
 	selectedVariant: ProductVariant,
-	selectedAddOns: AddOn[]
+	selectedAddOns: AddOn[],
+	collectionProducts: Product[]
 ) => {
-	const addOns = selectedAddOns.map((addOn) => {
-		return { merchandiseId: addOn.id, quantity: 1, attributes: [] };
-	});
-
+	// update frontend cart:
 	const attributes = [
 		{ key: 'Order type', value: selectedProduct.collections.edges[0].node.title },
 		...selectedAddOns.map((addOn) => {
-			return { key: addOn.title, value: addOn.value };
+			return { key: addOn.title, value: addOn.value! };
 		})
 	];
 
-	const product = {
-		merchandiseId: selectedVariant?.id || selectedProduct.variants[0].id,
-		quantity: 1,
+	const productVariant = selectedVariant || selectedProduct.variants[0];
+	console.log(productVariant, 'productVariant');
+
+	/// product section ////
+
+	const existingItem = cart.lines.find((item) => item.merchandise.id === productVariant.id);
+	console.log(existingItem, 'existingItem');
+
+	const updatedItem = createOrUpdateCartItem(
+		existingItem,
+		productVariant,
+		selectedProduct,
 		attributes
-	};
+	);
+	console.log(updatedItem, 'updatedItem');
 
-	return [product, ...addOns];
+	const updatedLines = existingItem
+		? cart?.lines.map((item) => (item.merchandise.id === productVariant.id ? updatedItem : item))
+		: [...cart.lines, updatedItem];
+	console.log(updatedLines, 'updatedLines');
+	cart.lines = updatedLines;
+
+	/// end product section ////
+
+	const addOnProduct = collectionProducts.filter((p) => p.productType === 'add-on')[0];
+	console.log(addOnProduct, 'addOnProduct');
+
+	selectedAddOns.forEach((addOn) => {
+		const addOnDetails = addOnProduct.variants.find((item) => item.id === addOn.id);
+		const existingItem = cart.lines.find((item) => item.merchandise.id === addOn.id);
+
+		const updatedAddOn = createOrUpdateCartItem(existingItem, addOnDetails!, addOnProduct);
+
+		const updatedAddOnLines = existingItem
+			? cart?.lines.map((item) => (item.merchandise.id === addOn.id ? updatedAddOn : item))
+			: [...cart.lines, updatedAddOn];
+
+		cart.lines = updatedAddOnLines;
+	});
+
+	const { totalQuantity, cost } = updateCartTotals(cart.lines);
+	cart.totalQuantity = totalQuantity;
+	cart.cost = cost;
+
+	// update backend cart:
+	const lines = prepareCartLines(selectedProduct, selectedVariant, selectedAddOns);
+
+	return await addItem(cart, lines);
 };
-
-export async function addItem(
-	cart: Cart,
-	lines: { merchandiseId: string; quantity: number; attributes: Attributes[] }[]
-) {
-	if (!cart || !lines) {
-		return 'Error adding item to cart';
-	}
-
-	try {
-		await addToCart(cart.id, lines);
-		return 'Item added to cart';
-	} catch (error) {
-		console.log(error);
-		return 'Error adding item to cart';
-	}
-}
 
 export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 	cart.lines = cart.lines.filter((line) => line.id !== cartItem.id);
@@ -75,8 +105,12 @@ export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 			const { totalQuantity, cost } = updateCartTotals(updatedLines);
 			cart.totalQuantity = totalQuantity;
 			cart.cost = cost;
+			/// remove from backend cart
 			linesToRemove.push(addOnLine.id!);
 		} else {
+			console.log('sfsfsdfsdfsdfs');
+			editItemFromCart(cart, addOnLine);
+			// update backend cart
 			linesToEdit.push({
 				id: addOnLine.id!,
 				merchandiseId: addOnLine.merchandise.id,
@@ -86,100 +120,31 @@ export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 		}
 	});
 
-	// await removeFromCart(cart.id, linesToRemove);
-	// await editCartItem(cart.id, linesToEdit);
+	await removeFromCart(cart.id, linesToRemove);
+	await editCartItem(cart.id, linesToEdit);
 	return 'Item removed from cart';
 };
 
-function calculateItemCost(quantity: number, price: string): string {
-	return (Number(price) * quantity).toString();
-}
-
-export const addItemToCart = async (
-	cart: Cart,
-	selectedProduct: Product,
-	selectedVariant: ProductVariant,
-	selectedAddOns: AddOn[]
-) => {
-	// update frontend cart:
-	const attributes = [
-		{ key: 'Order type', value: selectedProduct.collections.edges[0].node.title },
-		...selectedAddOns.map((addOn) => {
-			return { key: addOn.title, value: addOn.value! };
-		})
-	];
-	const existingItem = cart?.lines.find((item) => item.merchandise.id === selectedVariant.id);
-	const updatedItem = createOrUpdateCartItem(
-		existingItem,
-		selectedVariant,
-		selectedProduct,
-		attributes
+export const editItemFromCart = async (cart: Cart, cartItem: CartItem) => {
+	const qty = cartItem.quantity - 1;
+	const totalAmount = calculateItemCost(
+		qty,
+		(Number(cartItem.cost.totalAmount.amount) / cartItem.quantity).toString()
 	);
-	const updatedLines = existingItem
-		? cart?.lines.map((item) => (item.merchandise.id === selectedVariant.id ? updatedItem : item))
-		: [...cart.lines, updatedItem];
 
-	cart.lines = updatedLines;
-
-	const { totalQuantity, cost } = updateCartTotals(updatedLines);
-	cart.totalQuantity = totalQuantity;
-	cart.cost = cost;
-
-	// update backend cart:
-	const lines = prepareCartLines(selectedProduct, selectedVariant, selectedAddOns);
-
-	return await addItem(cart, lines);
-};
-
-function createOrUpdateCartItem(
-	existingItem: CartItem | undefined,
-	variant: ProductVariant,
-	product: Product,
-	attributes: Attributes[]
-): CartItem {
-	const quantity = existingItem ? existingItem.quantity + 1 : 1;
-	const totalAmount = calculateItemCost(quantity, variant.price.amount);
-
-	return {
-		id: existingItem?.id,
-		quantity,
-		attributes,
+	const updatedItem = {
+		...cartItem,
+		quantity: cartItem.quantity - 1,
 		cost: {
 			totalAmount: {
 				amount: totalAmount,
-				currencyCode: variant.price.currencyCode
-			}
-		},
-		merchandise: {
-			id: variant.id,
-			title: variant.title,
-			selectedOptions: variant.selectedOptions,
-			product: {
-				id: product.id,
-				handle: product.handle,
-				title: product.title,
-				featuredImage: product.featuredImage
+				currencyCode: cartItem.cost.totalAmount.currencyCode
 			}
 		}
 	};
-}
-
-export function updateCartTotals(lines: CartItem[]): Pick<Cart, 'totalQuantity' | 'cost'> {
-	const products = lines.filter((line) => !addOnsKeys.includes(line.merchandise.title));
-
-	const totalQuantity = products.reduce((sum, item) => sum + item.quantity, 0);
-
-	// const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
-	const totalAmount = lines.reduce((sum, item) => sum + Number(item.cost.totalAmount.amount), 0);
-
-	const currencyCode = lines[0]?.cost.totalAmount.currencyCode ?? 'USD';
-
-	return {
-		totalQuantity,
-		cost: {
-			subtotalAmount: { amount: totalAmount.toString(), currencyCode },
-			totalAmount: { amount: totalAmount.toString(), currencyCode },
-			totalTaxAmount: { amount: '0', currencyCode }
-		}
-	};
-}
+	const updatedLines = cart.lines.map((item) => (item.id === cartItem.id ? updatedItem : item));
+	cart.lines = updatedLines;
+	const { totalQuantity, cost } = updateCartTotals(updatedLines);
+	cart.totalQuantity = totalQuantity;
+	cart.cost = cost;
+};

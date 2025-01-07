@@ -7,13 +7,7 @@
 	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../../routes/+layout.svelte';
-	import {
-		addItem,
-		addItemToCart,
-		deleteItem,
-		prepareCartLines,
-		type AddOn
-	} from '$lib/Cart/actions copy';
+	import { addItemToCart, deleteItem, type AddOn } from '$lib/Cart/actions copy';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -33,7 +27,7 @@
 	let productVariants: ProductVariant[] | undefined = $derived(
 		productsWithVariants.find((p) => p.title === selectedProduct?.title)?.variants
 	);
-	let addOns = $derived(collectionProducts?.filter((p) => p.productType === 'add-on')[0]?.variants);
+	let addOns = $derived(collectionProducts.filter((p) => p.productType === 'add-on')[0]?.variants);
 	let message = $state('');
 
 	$effect(() => {
@@ -45,6 +39,12 @@
 			if (addOns) {
 				const matchedAddons = addOns.filter((addon) =>
 					cartItem.attributes.some((attribute) => attribute.key === addon.title)
+				);
+				console.log(addOns, 'addOns');
+				console.log({ ...matchedAddons }, 'matchedAddons');
+				console.log(
+					collectionProducts.filter((p) => p.productType === 'add-on'),
+					'sdfsdfsdf'
 				);
 				selectedAddOns = matchedAddons.map((addon) => ({
 					id: addon.id,
@@ -58,19 +58,17 @@
 
 	const handleSubmit = async (event: Event) => {
 		event.preventDefault();
-		// const formData = new FormData(event.target as HTMLFormElement);
 		const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
 		const updateType = submitter?.name as UpdateType;
-		// prepareCartItems(formData, collection, cart, updateType, cartItem);
 
 		///////////////
 		switch (updateType) {
 			case 'add':
-				const testing = addItemToCart(cart, selectedProduct!, selectedVariant!, selectedAddOns);
-				console.log(testing, 'testing');
-				const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
-				message = 'adding to cart...';
-				message = await addItem(cart, lines);
+				addItemToCart(cart, selectedProduct, selectedVariant, selectedAddOns, collectionProducts);
+				// console.log(testing, 'testing');
+				// const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
+				// message = 'adding to cart...';
+				// message = await addItem(cart, lines);
 				break;
 			case 'delete':
 				console.log('delete');
@@ -80,9 +78,6 @@
 					return 'No item in cart';
 				}
 				message = await deleteItem(cart, cartItem);
-				// if (message === 'Item removed from cart') {
-				// 	isCartEdit.update(() => false);
-				// }
 
 				isCartEdit.update(() => false);
 
@@ -90,16 +85,8 @@
 			case 'edit':
 				console.log('edit');
 
-				// deleteItem(cart, cartItem);
 				break;
 		}
-
-		// const items = Object.fromEntries(formData.entries());
-		// console.log(selectedProduct, 'selectedProduct');
-		// console.log(selectedVariant, 'selectedVariant');
-		// console.log(selectedAddOns, 'selectedAddOns');
-
-		// addItem(cart, lines);
 	};
 
 	const handleAddOnChange = (addOnId: string, addOnTitle: string, checked: boolean) => {

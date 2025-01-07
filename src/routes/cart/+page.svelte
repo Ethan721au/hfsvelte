@@ -30,10 +30,13 @@
 		const addOnLines = cart.lines.filter((line) =>
 			item.attributes.some((attr) => attr.key === line.merchandise.title)
 		);
-		const addOnCosts = addOnLines.reduce(
-			(acc, line) => acc + Number(line.cost.totalAmount.amount),
-			0
-		);
+
+		const addOnCosts = addOnLines.reduce((acc, line) => {
+			const amount = Number(line.cost.totalAmount.amount);
+			const quantity = line.quantity || 1;
+			return acc + amount / quantity;
+		}, 0);
+
 		const totalCosts = productCosts + addOnCosts;
 
 		return priceFormatter(totalCosts, 0);
