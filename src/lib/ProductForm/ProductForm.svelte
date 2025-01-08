@@ -32,10 +32,17 @@
 
 	$effect(() => {
 		if (cart && $isCartEdit && cartItem) {
+			console.log(cartItem, 'cartItem');
 			selectedProduct = cartItem.merchandise.product;
+
+			console.log(selectedProduct, 'selectedProduct');
+
 			selectedVariant = cartItem.merchandise.product.variants?.edges.find(
 				(v) => v.node.title === cartItem.merchandise.selectedOptions[0].value
 			)?.node;
+
+			console.log(selectedVariant, 'selectedVariant');
+
 			if (addOns) {
 				const matchedAddons = addOns.filter((addon) =>
 					cartItem.attributes.some((attribute) => attribute.key === addon.title)
@@ -71,14 +78,24 @@
 
 				break;
 			case 'edit':
-				editCartTest(
-					cart,
-					selectedProduct,
-					selectedVariant,
-					selectedAddOns,
-					collectionProducts,
-					cartItem
-				);
+				console.log(selectedVariant, 'selectedVariant');
+				// await deleteItem(cart, cartItem);
+				// await addItemToCart(
+				// 	cart,
+				// 	selectedProduct,
+				// 	selectedVariant,
+				// 	selectedAddOns,
+				// 	collectionProducts
+				// );
+				// isCartEdit.update(() => false);
+				// editCartTest(
+				// 	cart,
+				// 	selectedProduct,
+				// 	selectedVariant,
+				// 	selectedAddOns,
+				// 	collectionProducts,
+				// 	cartItem
+				// );
 				break;
 		}
 	};
@@ -106,6 +123,13 @@
 		);
 	};
 
+	const handleProductChange = (productTitle: string) => {
+		selectedProduct = products.find((p) => p.title === productTitle);
+		if (!productVariants) {
+			selectedVariant = undefined;
+		}
+	};
+
 	onMount(async () => {
 		if (collection) {
 			collectionProducts = await getCollectionProducts({ collection: collection.handle });
@@ -124,9 +148,7 @@
 					bold
 					label={`${collection?.title} *`}
 					selectedProduct={selectedProduct?.title || 'default'}
-					onChange={(product) => {
-						selectedProduct = products.find((p) => p.title === (product as string));
-					}}
+					onChange={(product) => handleProductChange(product as string)}
 					options={products}
 				/>
 				{#if productVariants}

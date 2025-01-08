@@ -100,3 +100,36 @@ export function createOrUpdateCartItem(
 		}
 	};
 }
+
+export function createOrUpdateCartItem2(
+	existingItem: CartItem | undefined,
+	variant: ProductVariant,
+	product: Product,
+	attributes?: Attributes[]
+): CartItem {
+	const quantity = existingItem ? existingItem.quantity + 1 : 1;
+	const totalAmount = calculateItemCost(quantity, variant.price.amount);
+
+	return {
+		id: existingItem?.id,
+		quantity,
+		attributes: attributes || [],
+		cost: {
+			totalAmount: {
+				amount: totalAmount,
+				currencyCode: variant.price.currencyCode
+			}
+		},
+		merchandise: {
+			id: variant.id,
+			title: variant.title,
+			selectedOptions: variant.selectedOptions,
+			product: {
+				id: product.id,
+				handle: product.handle,
+				title: product.title,
+				featuredImage: product.featuredImage
+			}
+		}
+	};
+}
