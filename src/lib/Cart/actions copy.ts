@@ -108,7 +108,6 @@ export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 			/// remove from backend cart
 			linesToRemove.push(addOnLine.id!);
 		} else {
-			console.log('sfsfsdfsdfsdfs');
 			editItemFromCart(cart, addOnLine);
 			// update backend cart
 			linesToEdit.push({
@@ -147,4 +146,20 @@ export const editItemFromCart = async (cart: Cart, cartItem: CartItem) => {
 	const { totalQuantity, cost } = updateCartTotals(updatedLines);
 	cart.totalQuantity = totalQuantity;
 	cart.cost = cost;
+};
+
+export const editCartTest = async (
+	cart: Cart,
+	selectedProduct: Product,
+	selectedVariant: ProductVariant,
+	selectedAddOns: AddOn[],
+	collectionProducts: Product[],
+	cartItem: CartItem
+) => {
+	console.log(cartItem, 'cartItem');
+	console.log(cart, 'cart');
+	console.log(selectedProduct, 'selectedProduct');
+	console.log(selectedVariant, 'selectedVariant');
+	console.log(selectedAddOns, 'selectedAddOns');
+	console.log(collectionProducts, 'collectionProducts');
 };

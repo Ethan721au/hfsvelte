@@ -7,7 +7,7 @@
 	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../../routes/+layout.svelte';
-	import { addItemToCart, deleteItem, type AddOn } from '$lib/Cart/actions copy';
+	import { addItemToCart, deleteItem, editCartTest, type AddOn } from '$lib/Cart/actions copy';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -40,12 +40,7 @@
 				const matchedAddons = addOns.filter((addon) =>
 					cartItem.attributes.some((attribute) => attribute.key === addon.title)
 				);
-				console.log(addOns, 'addOns');
-				console.log({ ...matchedAddons }, 'matchedAddons');
-				console.log(
-					collectionProducts.filter((p) => p.productType === 'add-on'),
-					'sdfsdfsdf'
-				);
+
 				selectedAddOns = matchedAddons.map((addon) => ({
 					id: addon.id,
 					title: addon.title,
@@ -65,15 +60,8 @@
 		switch (updateType) {
 			case 'add':
 				addItemToCart(cart, selectedProduct, selectedVariant, selectedAddOns, collectionProducts);
-				// console.log(testing, 'testing');
-				// const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
-				// message = 'adding to cart...';
-				// message = await addItem(cart, lines);
 				break;
 			case 'delete':
-				console.log('delete');
-				console.log(cart, 'cart');
-
 				if (!cartItem) {
 					return 'No item in cart';
 				}
@@ -83,19 +71,26 @@
 
 				break;
 			case 'edit':
-				console.log('edit');
-
+				editCartTest(
+					cart,
+					selectedProduct,
+					selectedVariant,
+					selectedAddOns,
+					collectionProducts,
+					cartItem
+				);
 				break;
 		}
 	};
 
 	const handleAddOnChange = (addOnId: string, addOnTitle: string, checked: boolean) => {
-		const isExisting = selectedAddOns.some((a) => a.id === addOnId);
-		if (isExisting) {
-			selectedAddOns = selectedAddOns.map((addOn) =>
-				addOn.id === addOnId ? { ...addOn, checked } : addOn
-			);
-		} else {
+		const existingAddOnIndex = selectedAddOns.findIndex((addOn) => addOn.id === addOnId);
+
+		if (existingAddOnIndex !== -1) {
+			selectedAddOns = selectedAddOns
+				.map((addOn, index) => (index === existingAddOnIndex ? { ...addOn, checked } : addOn))
+				.filter((addOn) => checked || addOn.id !== addOnId);
+		} else if (checked) {
 			selectedAddOns.push({
 				id: addOnId,
 				title: addOnTitle,
