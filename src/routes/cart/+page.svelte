@@ -34,7 +34,7 @@
 		const addOnCosts = addOnLines.reduce((acc, line) => {
 			const amount = Number(line.cost.totalAmount.amount);
 			const quantity = line.quantity || 1;
-			return acc + amount / quantity;
+			return acc + (amount / quantity) * item.quantity;
 		}, 0);
 
 		const totalCosts = productCosts + addOnCosts;
@@ -54,7 +54,9 @@
 					<div class="product-details">
 						<div>
 							<strong>{item.merchandise.product.title}</strong>
-							<p>{item.merchandise.title}</p>
+							<p>
+								{item.merchandise.title === 'Default Title' ? '' : item.merchandise.title}
+							</p>
 							{#each item.attributes as attribute}
 								<p>{attribute.key}: {attribute.value}</p>
 							{/each}

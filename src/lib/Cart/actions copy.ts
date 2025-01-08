@@ -39,12 +39,16 @@ export const addItemToCart = async (
 	];
 
 	const productVariant = selectedVariant || selectedProduct.variants[0];
-	console.log(productVariant, 'productVariant');
 
 	/// product section ////
 
-	const existingItem = cart.lines.find((item) => item.merchandise.id === productVariant.id);
-	console.log(existingItem, 'existingItem');
+	const existingItem = cart.lines.find(
+		(item) =>
+			item.merchandise.id === productVariant.id &&
+			selectedAddOns.every((addOn) =>
+				item.attributes.some((attr) => attr.value === addOn.value && attr.key === addOn.title)
+			)
+	);
 
 	const updatedItem = createOrUpdateCartItem(
 		existingItem,
@@ -52,18 +56,15 @@ export const addItemToCart = async (
 		selectedProduct,
 		attributes
 	);
-	console.log(updatedItem, 'updatedItem');
 
 	const updatedLines = existingItem
 		? cart?.lines.map((item) => (item.merchandise.id === productVariant.id ? updatedItem : item))
 		: [...cart.lines, updatedItem];
-	console.log(updatedLines, 'updatedLines');
 	cart.lines = updatedLines;
 
 	/// end product section ////
 
 	const addOnProduct = collectionProducts.filter((p) => p.productType === 'add-on')[0];
-	console.log(addOnProduct, 'addOnProduct');
 
 	selectedAddOns.forEach((addOn) => {
 		const addOnDetails = addOnProduct.variants.find((item) => item.id === addOn.id);
@@ -92,6 +93,7 @@ export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 	cart.lines = cart.lines.filter((line) => line.id !== cartItem.id);
 
 	const linesToRemove = [cartItem.id!];
+
 	const linesToEdit: Line[] = [];
 
 	const addOnLines = cart.lines.filter((line) =>
@@ -101,9 +103,13 @@ export const deleteItem = async (cart: Cart, cartItem: CartItem) => {
 	addOnLines.forEach((addOnLine) => {
 		if (addOnLine.quantity - 1 === 0) {
 			const updatedLines = cart.lines.filter((line) => line.id !== addOnLine.id);
+
 			cart.lines = updatedLines;
+
 			const { totalQuantity, cost } = updateCartTotals(updatedLines);
+
 			cart.totalQuantity = totalQuantity;
+
 			cart.cost = cost;
 			/// remove from backend cart
 			linesToRemove.push(addOnLine.id!);
