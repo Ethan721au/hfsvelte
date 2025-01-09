@@ -2,6 +2,7 @@ import type { Attributes, Cart, CartItem, Product, ProductVariant } from '$lib/s
 import type { Writable } from 'svelte/store';
 import { addItem, createOrUpdateCartItem, prepareCartLines, updateCartTotals } from './utils';
 import { get } from 'svelte/store';
+import { editCartItem, removeFromCart } from '$lib/shopify';
 
 type Line = {
 	id: string;
@@ -44,88 +45,17 @@ export const prepareDeleteLines = (cart: Cart, cartItem: CartItem | undefined) =
 	return { linesIdsToRemove, linesToEdit };
 };
 
-export const addProductAndAddOnsToCart = async (
-	cart: Writable<Cart>,
-	selectedProduct: Product,
-	selectedVariant: ProductVariant,
-	selectedAddOns: AddOn[],
-	addOns: Product
-) => {
-	const cartValue = get(cart);
-
-	////////
-
-	const addItemToCart = (
-		lines: CartLine[],
-		item: Product | AddOn,
-		variant: ProductVariant,
-		selectedAddOns: AddOn[],
-		attributes: Attributes[]
-	) => {
-		const existingItem = lines.find(
-			(line) =>
-				line.merchandise.id === variant?.id &&
-				(!selectedAddOns ||
-					selectedAddOns.every((addOn) =>
-						line.attributes.some(
-							(lineAttr) => lineAttr.key === addOn.title && lineAttr.value === addOn.value
-						)
-					))
-		);
-
-		const updatedItem = createOrUpdateCartItem(existingItem, variant, item, attributes);
-
-		return existingItem
-			? lines.map((line) => (line.merchandise.id === variant?.id ? updatedItem : line))
-			: [...lines, updatedItem];
-	};
-
-	//////////
-
-	const productAttributes = [
-		{ key: 'Order type', value: selectedProduct?.collections.edges[0]?.node.title },
-		...selectedAddOns.map((addOn) => ({ key: addOn.title, value: addOn.value! }))
-	];
-	const productVariant = selectedVariant || selectedProduct?.variants[0];
-
-	let updatedLines = addItemToCart(
-		cartValue.lines,
-		selectedProduct,
-		productVariant,
-		selectedAddOns,
-		productAttributes
-	);
-
-	selectedAddOns.forEach((addOn) => {
-		const addOnDetails = addOns.variants.find((variant) => variant.id === addOn.id);
-		if (addOnDetails) {
-			updatedLines = addItemToCart(updatedLines, addOns, addOnDetails, []);
-		}
-	});
-
-	const { totalQuantity, cost } = updateCartTotals(updatedLines);
-
-	const updatedCart = { ...cartValue, lines: updatedLines, totalQuantity, cost };
-
-	cart.set(updatedCart);
-
-	const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
-
-	await addItem(cartValue, lines);
-};
-
 export const addProductWithAddOnsToCart = async (
 	cart: Writable<Cart>,
 	selectedProduct: Product,
-	selectedVariant: ProductVariant,
+	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOn[],
 	addOns: Product
 ) => {
 	const cartValue = get(cart);
-	// Add the main product
+
 	const productCart = addProductToCart(cartValue, selectedProduct, selectedVariant, selectedAddOns);
 
-	// Add all selected add-ons
 	const updatedLines = selectedAddOns.reduce((lines, addOn) => {
 		const addOnDetails = addOns.variants.find((variant) => variant.id === addOn.id);
 		if (!addOnDetails) return lines;
@@ -134,14 +64,12 @@ export const addProductWithAddOnsToCart = async (
 		const updatedAddOn = createOrUpdateCartItem(existingItem, addOnDetails, addOns);
 
 		return existingItem
-			? lines.map((item) => (item.merchandise.id === addOn.id ? updatedAddOn : item))
+			? lines.map((item) => (item.id === existingItem.id ? updatedAddOn : item))
 			: [...lines, updatedAddOn];
 	}, productCart.lines);
 
-	// Update totals
 	const { totalQuantity, cost } = updateCartTotals(updatedLines);
 
-	// Return the updated cart object
 	const updatedCart = {
 		...cartValue,
 		lines: updatedLines,
@@ -156,11 +84,10 @@ export const addProductWithAddOnsToCart = async (
 	await addItem(cartValue, lines);
 };
 
-// Function for adding a single product to the cart
 export const addProductToCart = (
 	cart: Cart,
 	selectedProduct: Product,
-	selectedVariant: ProductVariant,
+	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOn[]
 ) => {
 	const attributes = [
@@ -186,10 +113,48 @@ export const addProductToCart = (
 	);
 
 	const lines = existingItem
-		? cart.lines.map((item) => (item.merchandise.id === productVariant.id ? updatedItem : item))
+		? cart.lines.map((item) => (item.id === existingItem.id ? updatedItem : item))
 		: [...cart.lines, updatedItem];
 
 	const { totalQuantity, cost } = updateCartTotals(lines);
 
 	return { ...cart, lines, totalQuantity, cost };
+};
+
+export const deleteItemFromCart = async (cart: Writable<Cart>, cartItem: CartItem | undefined) => {
+	if (!cartItem) return;
+	const cartValue = get(cart);
+
+	const linesIdsToRemove = [cartItem.id];
+
+	const linesToEdit: Line[] = [];
+
+	const cartWithDeletedItem = cartValue.lines.filter((line) => line.id !== cartItem.id);
+
+	console.log(cartWithDeletedItem, 'cartWithDeletedItem');
+
+	const productAddOnsCartLines = cartValue.lines.filter((line) =>
+		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
+	);
+
+	console.log(productAddOnsCartLines, 'productAddOnsCartLines');
+
+	productAddOnsCartLines.forEach((addOnLine) => {
+		const newQty = addOnLine.quantity - 1;
+		if (newQty <= 0) {
+			/// remove from backend cart
+			linesIdsToRemove.push(addOnLine.id);
+		} else {
+			// update backend cart
+			linesToEdit.push({
+				id: addOnLine.id,
+				merchandiseId: addOnLine.merchandise.id,
+				quantity: addOnLine.quantity - 1,
+				attributes: addOnLine.attributes
+			});
+		}
+	});
+
+	await removeFromCart(cartValue.id, linesIdsToRemove);
+	await editCartItem(cartValue.id, linesToEdit);
 };

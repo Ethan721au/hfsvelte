@@ -7,12 +7,13 @@
 	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../../routes/+layout.svelte';
-	import { addItemToCart, deleteItem, editCartTest, type AddOn } from '$lib/Cart/actions copy';
+	// import { addItemToCart, deleteItem, editCartTest, type AddOn } from '$lib/Cart/actions copy';
 	import { addItem, prepareCartLines } from '$lib/Cart/utils';
 	import {
-		addProductAndAddOnsToCart,
 		addProductWithAddOnsToCart,
-		prepareDeleteLines
+		deleteItemFromCart,
+		prepareDeleteLines,
+		type AddOn
 	} from '$lib/Cart/actions updates';
 
 	type ProductFormProps = {
@@ -69,16 +70,19 @@
 		///////////////
 		switch (updateType) {
 			case 'add':
+				if (!selectedProduct) {
+					return 'Please select a product';
+				}
 				addProductWithAddOnsToCart(cart, selectedProduct, selectedVariant, selectedAddOns, addOns);
 
 				console.log($cart, 'updated cart');
 
 				break;
 			case 'delete':
-				// const { linesIdsToRemove, linesToEdit } = prepareDeleteLines(cart, cartItem!);
+				deleteItemFromCart(cart, cartItem);
 
-				await removeFromCart($cart.id, linesIdsToRemove);
-				await editCartItem($cart.id, linesToEdit);
+				// await removeFromCart($cart.id, linesIdsToRemove);
+				// await editCartItem($cart.id, linesToEdit);
 				// if (!cartItem) {
 				// 	return 'No item in cart';
 				// }
