@@ -171,40 +171,37 @@ export const editCartTest = async (
 	console.log(selectedAddOns, 'selectedAddOns');
 	console.log(collectionProducts, 'collectionProducts');
 
-	await deleteItem(cart, cartItem);
-	await addItemToCart(cart, selectedProduct, selectedVariant, selectedAddOns, collectionProducts);
+	const attributes = [
+		{ key: 'Order type', value: selectedProduct.collections.edges[0].node.title },
+		...selectedAddOns.map((addOn) => {
+			return { key: addOn.title, value: addOn.value! };
+		})
+	];
 
-	// const attributes = [
-	// 	{ key: 'Order type', value: selectedProduct.collections.edges[0].node.title },
-	// 	...selectedAddOns.map((addOn) => {
-	// 		return { key: addOn.title, value: addOn.value! };
-	// 	})
-	// ];
+	const productVariant = selectedVariant || selectedProduct.variants[0];
 
-	// const productVariant = selectedVariant || selectedProduct.variants[0];
+	const existingItem = cart.lines.find(
+		(item) =>
+			item.merchandise.id === productVariant.id &&
+			selectedAddOns.every((addOn) =>
+				item.attributes.some((attr) => attr.value === addOn.value && attr.key === addOn.title)
+			)
+	);
 
-	// const existingItem = cart.lines.find(
-	// 	(item) =>
-	// 		item.merchandise.id === productVariant.id &&
-	// 		selectedAddOns.every((addOn) =>
-	// 			item.attributes.some((attr) => attr.value === addOn.value && attr.key === addOn.title)
-	// 		)
-	// );
+	const updatedItem = createOrUpdateCartItem2(
+		existingItem,
+		productVariant,
+		selectedProduct,
+		attributes
+	);
 
-	// const updatedItem = createOrUpdateCartItem2(
-	// 	existingItem,
-	// 	productVariant,
-	// 	selectedProduct,
-	// 	attributes
-	// );
+	console.log(updatedItem, 'updatedItem');
 
-	// console.log(updatedItem, 'updatedItem');
+	const updatedLines = cart?.lines.map((item) => (item.id === cartItem.id ? updatedItem : item));
 
-	// const updatedLines = cart?.lines.map((item) => (item.id === cartItem.id ? updatedItem : item));
+	console.log(updatedLines, 'updatedLines');
 
-	// console.log(updatedLines, 'updatedLines');
-
-	// cart.lines = updatedLines;
+	cart.lines = updatedLines;
 
 	// const { totalQuantity, cost } = updateCartTotals(cart.lines);
 
@@ -212,30 +209,49 @@ export const editCartTest = async (
 
 	// cart.cost = cost;
 
-	// const addOnLines = cart.lines.filter((line) =>
-	// 	cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
-	// );
+	const addOnLines = cart.lines.filter((line) =>
+		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
+	);
 
-	// addOnLines.forEach((addOnLine) => {
-	// 	if (addOnLine.quantity - 1 === 0) {
-	// 		const updatedLines = cart.lines.filter((line) => line.id !== addOnLine.id);
+	addOnLines.forEach((addOnLine) => {
+		if (addOnLine.quantity - 1 === 0) {
+			const updatedLines = cart.lines.filter((line) => line.id !== addOnLine.id);
 
-	// 		cart.lines = updatedLines;
+			cart.lines = updatedLines;
 
-	// 		const { totalQuantity, cost } = updateCartTotals(updatedLines);
+			const { totalQuantity, cost } = updateCartTotals(updatedLines);
 
-	// 		cart.totalQuantity = totalQuantity;
+			cart.totalQuantity = totalQuantity;
 
-	// 		cart.cost = cost;
-	// 		linesToRemove.push(addOnLine.id!);
-	// 	} else {
-	// 		editItemFromCart(cart, addOnLine);
-	// 		linesToEdit.push({
-	// 			id: addOnLine.id!,
-	// 			merchandiseId: addOnLine.merchandise.id,
-	// 			quantity: addOnLine.quantity - 1,
-	// 			attributes: addOnLine.attributes
-	// 		});
-	// 	}
-	// });
+			cart.cost = cost;
+			// linesToRemove.push(addOnLine.id!);
+		} else {
+			editItemFromCart(cart, addOnLine);
+			// linesToEdit.push({
+			// 	id: addOnLine.id!,
+			// 	merchandiseId: addOnLine.merchandise.id,
+			// 	quantity: addOnLine.quantity - 1,
+			// 	attributes: addOnLine.attributes
+			// });
+		}
+	});
+
+	const addOnProduct = collectionProducts.filter((p) => p.productType === 'add-on')[0];
+
+	selectedAddOns.forEach((addOn) => {
+		const addOnDetails = addOnProduct.variants.find((item) => item.id === addOn.id);
+		const existingItem = cart.lines.find((item) => item.merchandise.id === addOn.id);
+
+		const updatedAddOn = createOrUpdateCartItem(existingItem, addOnDetails!, addOnProduct);
+
+		const updatedAddOnLines = existingItem
+			? cart?.lines.map((item) => (item.merchandise.id === addOn.id ? updatedAddOn : item))
+			: [...cart.lines, updatedAddOn];
+
+		cart.lines = updatedAddOnLines;
+	});
+
+	const { totalQuantity, cost } = updateCartTotals(cart.lines);
+	cart.totalQuantity = totalQuantity;
+	cart.cost = cost;
 };

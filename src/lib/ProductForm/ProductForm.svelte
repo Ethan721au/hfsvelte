@@ -3,11 +3,13 @@
 	import { priceFormatter } from '$lib';
 	import { prepareCartItems, type UpdateType } from '$lib/Cart/actions';
 	import Input from '$lib/Input/Input.svelte';
-	import { getCollectionProducts } from '$lib/shopify';
+	import { editCartItem, getCollectionProducts, removeFromCart } from '$lib/shopify';
 	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../../routes/+layout.svelte';
 	import { addItemToCart, deleteItem, editCartTest, type AddOn } from '$lib/Cart/actions copy';
+	import { addItem, prepareCartLines } from '$lib/Cart/utils';
+	import { prepareDeleteLines } from '$lib/Cart/actions update';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -32,16 +34,11 @@
 
 	$effect(() => {
 		if (cart && $isCartEdit && cartItem) {
-			console.log(cartItem, 'cartItem');
 			selectedProduct = cartItem.merchandise.product;
-
-			console.log(selectedProduct, 'selectedProduct');
 
 			selectedVariant = cartItem.merchandise.product.variants?.edges.find(
 				(v) => v.node.title === cartItem.merchandise.selectedOptions[0].value
 			)?.node;
-
-			console.log(selectedVariant, 'selectedVariant');
 
 			if (addOns) {
 				const matchedAddons = addOns.filter((addon) =>
@@ -62,32 +59,39 @@
 		event.preventDefault();
 		const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
 		const updateType = submitter?.name as UpdateType;
+		const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
+		const { linesIdsToRemove, linesToEdit } = prepareDeleteLines(cart, cartItem);
 
 		///////////////
 		switch (updateType) {
 			case 'add':
-				addItemToCart(cart, selectedProduct, selectedVariant, selectedAddOns, collectionProducts);
+				// const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
+
+				await addItem(cart, lines);
+				// addItemToCart(cart, selectedProduct, selectedVariant, selectedAddOns, collectionProducts);
 				break;
 			case 'delete':
-				if (!cartItem) {
-					return 'No item in cart';
-				}
-				message = await deleteItem(cart, cartItem);
+				// const { linesIdsToRemove, linesToEdit } = prepareDeleteLines(cart, cartItem!);
 
-				isCartEdit.update(() => false);
+				await removeFromCart(cart.id, linesIdsToRemove);
+				await editCartItem(cart.id, linesToEdit);
+				// if (!cartItem) {
+				// 	return 'No item in cart';
+				// }
+				// message = await deleteItem(cart, cartItem);
+
+				// isCartEdit.update(() => false);
 
 				break;
 			case 'edit':
-				console.log(selectedVariant, 'selectedVariant');
-				// await deleteItem(cart, cartItem);
-				// await addItemToCart(
-				// 	cart,
-				// 	selectedProduct,
-				// 	selectedVariant,
-				// 	selectedAddOns,
-				// 	collectionProducts
-				// );
-				// isCartEdit.update(() => false);
+				// const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
+				// const { linesIdsToRemove, linesToEdit } = prepareDeleteLines(cart, cartItem!);
+
+				await removeFromCart(cart.id, linesIdsToRemove);
+				await editCartItem(cart.id, linesToEdit);
+				await addItem(cart, lines);
+				// console.log(selectedVariant, 'selectedVariant');
+
 				// editCartTest(
 				// 	cart,
 				// 	selectedProduct,
