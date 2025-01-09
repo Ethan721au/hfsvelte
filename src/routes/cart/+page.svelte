@@ -12,7 +12,7 @@
 	let collection: Collection | undefined = $state(undefined);
 	let cartItem: CartItem | undefined = $state(undefined);
 	let cartItems: CartItem[] = $derived(
-		cart?.lines.filter((line) => !addOnsKeys.includes(line.merchandise.title))
+		$cart.lines.filter((line) => !addOnsKeys.includes(line.merchandise.title))
 	);
 
 	const handleCartEdit = (item: CartItem) => {
@@ -27,7 +27,7 @@
 	const calculateTotalCosts = (item: CartItem) => {
 		const productCosts = Number(item.cost.totalAmount.amount);
 
-		const addOnLines = cart.lines.filter((line) =>
+		const addOnLines = $cart.lines.filter((line) =>
 			item.attributes.some((attr) => attr.key === line.merchandise.title)
 		);
 

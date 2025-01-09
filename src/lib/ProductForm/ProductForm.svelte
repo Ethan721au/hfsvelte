@@ -9,7 +9,11 @@
 	import type { CartContext } from '../../routes/+layout.svelte';
 	import { addItemToCart, deleteItem, editCartTest, type AddOn } from '$lib/Cart/actions copy';
 	import { addItem, prepareCartLines } from '$lib/Cart/utils';
-	import { prepareDeleteLines } from '$lib/Cart/actions update';
+	import {
+		addProductAndAddOnsToCart,
+		addProductWithAddOnsToCart,
+		prepareDeleteLines
+	} from '$lib/Cart/actions updates';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -29,11 +33,11 @@
 	let productVariants: ProductVariant[] | undefined = $derived(
 		productsWithVariants.find((p) => p.title === selectedProduct?.title)?.variants
 	);
-	let addOns = $derived(collectionProducts.filter((p) => p.productType === 'add-on')[0]?.variants);
+	let addOns = $derived(collectionProducts.filter((p) => p.productType === 'add-on')[0]);
 	let message = $state('');
 
 	$effect(() => {
-		if (cart && $isCartEdit && cartItem) {
+		if ($cart && $isCartEdit && cartItem) {
 			selectedProduct = cartItem.merchandise.product;
 
 			selectedVariant = cartItem.merchandise.product.variants?.edges.find(
@@ -41,7 +45,7 @@
 			)?.node;
 
 			if (addOns) {
-				const matchedAddons = addOns.filter((addon) =>
+				const matchedAddons = addOns.variants.filter((addon) =>
 					cartItem.attributes.some((attribute) => attribute.key === addon.title)
 				);
 
@@ -60,21 +64,21 @@
 		const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
 		const updateType = submitter?.name as UpdateType;
 		const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
-		const { linesIdsToRemove, linesToEdit } = prepareDeleteLines(cart, cartItem);
+		const { linesIdsToRemove, linesToEdit } = prepareDeleteLines($cart, cartItem);
 
 		///////////////
 		switch (updateType) {
 			case 'add':
-				// const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
+				addProductWithAddOnsToCart(cart, selectedProduct, selectedVariant, selectedAddOns, addOns);
 
-				await addItem(cart, lines);
-				// addItemToCart(cart, selectedProduct, selectedVariant, selectedAddOns, collectionProducts);
+				console.log($cart, 'updated cart');
+
 				break;
 			case 'delete':
 				// const { linesIdsToRemove, linesToEdit } = prepareDeleteLines(cart, cartItem!);
 
-				await removeFromCart(cart.id, linesIdsToRemove);
-				await editCartItem(cart.id, linesToEdit);
+				await removeFromCart($cart.id, linesIdsToRemove);
+				await editCartItem($cart.id, linesToEdit);
 				// if (!cartItem) {
 				// 	return 'No item in cart';
 				// }
@@ -87,9 +91,9 @@
 				// const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
 				// const { linesIdsToRemove, linesToEdit } = prepareDeleteLines(cart, cartItem!);
 
-				await removeFromCart(cart.id, linesIdsToRemove);
-				await editCartItem(cart.id, linesToEdit);
-				await addItem(cart, lines);
+				await removeFromCart($cart.id, linesIdsToRemove);
+				await editCartItem($cart.id, linesToEdit);
+				await addItem($cart, lines);
 				// console.log(selectedVariant, 'selectedVariant');
 
 				// editCartTest(
@@ -169,7 +173,7 @@
 					/>
 				{/if}
 				{#if addOns}
-					{#each addOns as addOn (addOn.id)}
+					{#each addOns.variants as addOn (addOn.id)}
 						<Input
 							type="checkbox"
 							label={`${addOn.title} (+${priceFormatter(addOn?.price.amount, 0)})`}

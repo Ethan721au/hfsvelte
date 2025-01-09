@@ -3,7 +3,7 @@
 	import './header.css';
 	import { getContext } from 'svelte';
 	const { cart } = getContext<CartContext>('cart');
-	console.log(cart, 'cart');
+	console.log($cart, 'cartFromHeader');
 </script>
 
 <div class="header-wrapper">
@@ -20,6 +20,7 @@
 	</a>
 	<a href="/cart" class="cart-icon-wrapper">
 		<img src="/cartIcon.svg" alt="Cart" />
-		<div class="count-bubble">{cart?.totalQuantity}</div>
+		<!-- <div class="count-bubble">{cart?.totalQuantity}</div> -->
+		<div class="count-bubble">{$cart.totalQuantity}</div>
 	</a>
 </div>
