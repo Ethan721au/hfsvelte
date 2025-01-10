@@ -1,4 +1,6 @@
-import { createCartAndSetCookie, updateCartTotals } from '$lib/Cart/actions';
+// import { createCartAndSetCookie, updateCartTotals } from '$lib/Cart/actions';
+import { createCartAndSetCookie } from '$lib/Cart/actions';
+import { updateCartTotals } from '$lib/Cart/utils';
 import { getCart } from '$lib/shopify';
 import type { LayoutServerLoad } from './$types';
 

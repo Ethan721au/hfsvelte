@@ -6,7 +6,7 @@
 	import { priceFormatter } from '$lib';
 	import { getCollections } from '$lib/shopify';
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
-	import { incrementCartItem } from '$lib/Cart/actions updates';
+	import { incrementCartItem } from '$lib/Cart/actions';
 
 	const { cart, isCartEdit } = getContext<CartContext>('cart');
 	let collections: Collection[] = $state([]);

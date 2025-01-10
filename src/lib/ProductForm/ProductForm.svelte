@@ -11,7 +11,7 @@
 		pleaseRemovefromCart,
 		type AddOn,
 		type UpdateType
-	} from '$lib/Cart/actions updates';
+	} from '$lib/Cart/actions';
 
 	type ProductFormProps = {
 		collection: Collection;
