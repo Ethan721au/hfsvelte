@@ -1,6 +1,12 @@
-import type { Attributes, Cart, CartItem, Product, ProductVariant } from '$lib/shopify/types';
+import type { Cart, CartItem, Product, ProductVariant } from '$lib/shopify/types';
 import type { Writable } from 'svelte/store';
-import { addItem, createOrUpdateCartItem, prepareCartLines, updateCartTotals } from './utils';
+import {
+	addItem,
+	calculateItemCost,
+	createOrUpdateCartItem,
+	prepareCartLines,
+	updateCartTotals
+} from './utils';
 import { get } from 'svelte/store';
 import { editCartItem, removeFromCart } from '$lib/shopify';
 
@@ -18,34 +24,9 @@ export type AddOn = {
 	value?: FormDataEntryValue | undefined;
 };
 
-export const prepareDeleteLines = (cart: Cart, cartItem: CartItem | undefined) => {
-	const linesIdsToRemove = cartItem ? [cartItem.id] : [];
+export type UpdateType = 'plus' | 'minus' | 'delete' | 'edit' | 'add';
 
-	const linesToEdit: Line[] = [];
-
-	const addOnLines = cart.lines.filter((line) =>
-		cartItem?.attributes.some((attr) => attr.key === line.merchandise.title)
-	);
-
-	addOnLines.forEach((addOnLine) => {
-		if (addOnLine.quantity - 1 === 0) {
-			/// remove from backend cart
-			linesIdsToRemove.push(addOnLine.id!);
-		} else {
-			// update backend cart
-			linesToEdit.push({
-				id: addOnLine.id!,
-				merchandiseId: addOnLine.merchandise.id,
-				quantity: addOnLine.quantity - 1,
-				attributes: addOnLine.attributes
-			});
-		}
-	});
-
-	return { linesIdsToRemove, linesToEdit };
-};
-
-export const addProductWithAddOnsToCart = async (
+export const addProductWithAddOnsToCart = (
 	cart: Writable<Cart>,
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
@@ -79,9 +60,9 @@ export const addProductWithAddOnsToCart = async (
 
 	cart.set(updatedCart);
 
-	const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
+	const newLines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
 
-	await addItem(cartValue, lines);
+	return newLines;
 };
 
 export const addProductToCart = (
@@ -121,40 +102,133 @@ export const addProductToCart = (
 	return { ...cart, lines, totalQuantity, cost };
 };
 
-export const deleteItemFromCart = async (cart: Writable<Cart>, cartItem: CartItem | undefined) => {
-	if (!cartItem) return;
+export const deleteItemFromCart = (cart: Writable<Cart>, cartItem: CartItem) => {
 	const cartValue = get(cart);
 
 	const linesIdsToRemove = [cartItem.id];
 
 	const linesToEdit: Line[] = [];
 
-	const cartWithDeletedItem = cartValue.lines.filter((line) => line.id !== cartItem.id);
-
-	console.log(cartWithDeletedItem, 'cartWithDeletedItem');
+	let updatedLines = cartValue.lines.filter((line) => line.id !== cartItem.id);
 
 	const productAddOnsCartLines = cartValue.lines.filter((line) =>
 		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
 	);
 
-	console.log(productAddOnsCartLines, 'productAddOnsCartLines');
-
 	productAddOnsCartLines.forEach((addOnLine) => {
 		const newQty = addOnLine.quantity - 1;
+
 		if (newQty <= 0) {
-			/// remove from backend cart
+			updatedLines = updatedLines.filter((line) => line.id !== addOnLine.id);
+
 			linesIdsToRemove.push(addOnLine.id);
 		} else {
-			// update backend cart
 			linesToEdit.push({
-				id: addOnLine.id,
+				id: addOnLine.id!,
 				merchandiseId: addOnLine.merchandise.id,
-				quantity: addOnLine.quantity - 1,
+				quantity: newQty,
 				attributes: addOnLine.attributes
 			});
+
+			const updatedItem = {
+				...addOnLine,
+				quantity: newQty,
+				cost: {
+					totalAmount: {
+						amount: calculateItemCost(
+							newQty,
+							(Number(addOnLine.cost.totalAmount.amount) / addOnLine.quantity).toString()
+						),
+						currencyCode: addOnLine.cost.totalAmount.currencyCode
+					}
+				}
+			};
+
+			updatedLines = updatedLines.map((item) => (item.id === addOnLine.id ? updatedItem : item));
 		}
 	});
 
+	const { totalQuantity, cost } = updateCartTotals(updatedLines);
+
+	cart.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
+
+	return { linesIdsToRemove, linesToEdit };
+};
+
+export const pleaseAddItemToCart = async (
+	cart: Writable<Cart>,
+	selectedProduct: Product,
+	selectedVariant: ProductVariant | undefined,
+	selectedAddOns: AddOn[],
+	addOns: Product
+) => {
+	const cartValue = get(cart);
+
+	const newLines = addProductWithAddOnsToCart(
+		cart,
+		selectedProduct,
+		selectedVariant,
+		selectedAddOns,
+		addOns
+	);
+
+	await addItem(cartValue, newLines);
+};
+
+export const pleaseRemovefromCart = async (cart: Writable<Cart>, cartItem: CartItem) => {
+	const cartValue = get(cart);
+
+	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cart, cartItem);
+
 	await removeFromCart(cartValue.id, linesIdsToRemove);
 	await editCartItem(cartValue.id, linesToEdit);
+};
+
+export const pleaseEditCartItem = async (
+	cart: Writable<Cart>,
+	selectedProduct: Product,
+	selectedVariant: ProductVariant | undefined,
+	selectedAddOns: AddOn[],
+	addOns: Product,
+	cartItem: CartItem
+) => {
+	const cartValue = get(cart);
+
+	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cart, cartItem);
+
+	const newLines = addProductWithAddOnsToCart(
+		cart,
+		selectedProduct,
+		selectedVariant,
+		selectedAddOns,
+		addOns
+	);
+
+	await removeFromCart(cartValue.id, linesIdsToRemove);
+	await editCartItem(cartValue.id, linesToEdit);
+	await addItem(cartValue, newLines);
+
+	// return 'completed';
+};
+
+export const incrementCartItem = async (cart: Writable<Cart>, cartItem: CartItem) => {
+	const cartValue = get(cart);
+	console.log(cartValue, 'cart');
+	console.log(cartItem, 'cartItem');
+
+	const updatedItem = {
+		...cartItem,
+		quantity: cartItem.quantity + 1,
+		cost: {
+			totalAmount: {
+				amount: calculateItemCost(
+					cartItem.quantity + 1,
+					(Number(cartItem.cost.totalAmount.amount) / cartItem.quantity).toString()
+				),
+				currencyCode: cartItem.cost.totalAmount.currencyCode
+			}
+		}
+	};
+
+	console.log(updatedItem, 'updatedItem');
 };

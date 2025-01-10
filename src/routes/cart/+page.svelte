@@ -6,6 +6,7 @@
 	import { priceFormatter } from '$lib';
 	import { getCollections } from '$lib/shopify';
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
+	import { incrementCartItem } from '$lib/Cart/actions updates';
 
 	const { cart, isCartEdit } = getContext<CartContext>('cart');
 	let collections: Collection[] = $state([]);
@@ -20,6 +21,11 @@
 		cartItem = item;
 		collection = collections.find((c) => item.attributes.some((a) => a.value === c.title));
 	};
+
+	const handleIncrement = (item: CartItem) => {
+		incrementCartItem(cart, item);
+	};
+
 	onMount(async () => {
 		collections = await getCollections();
 	});
@@ -62,7 +68,7 @@
 							{/each}
 						</div>
 						<div style="display: flex; gap: 10px;">
-							<div>+</div>
+							<button onclick={() => handleIncrement(item)}>+</button>
 							<p>{item.quantity}</p>
 							<div>-</div>
 						</div>

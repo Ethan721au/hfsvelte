@@ -1,19 +1,16 @@
 <script lang="ts">
-	// import { Loader } from '@svelteuidev/core';
 	import { priceFormatter } from '$lib';
-	import { prepareCartItems, type UpdateType } from '$lib/Cart/actions';
 	import Input from '$lib/Input/Input.svelte';
-	import { editCartItem, getCollectionProducts, removeFromCart } from '$lib/shopify';
+	import { getCollectionProducts } from '$lib/shopify';
 	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../../routes/+layout.svelte';
-	// import { addItemToCart, deleteItem, editCartTest, type AddOn } from '$lib/Cart/actions copy';
-	import { addItem, prepareCartLines } from '$lib/Cart/utils';
 	import {
-		addProductWithAddOnsToCart,
-		deleteItemFromCart,
-		prepareDeleteLines,
-		type AddOn
+		pleaseAddItemToCart,
+		pleaseEditCartItem,
+		pleaseRemovefromCart,
+		type AddOn,
+		type UpdateType
 	} from '$lib/Cart/actions updates';
 
 	type ProductFormProps = {
@@ -35,7 +32,7 @@
 		productsWithVariants.find((p) => p.title === selectedProduct?.title)?.variants
 	);
 	let addOns = $derived(collectionProducts.filter((p) => p.productType === 'add-on')[0]);
-	let message = $state('');
+	let isUpdating = $state(false);
 
 	$effect(() => {
 		if ($cart && $isCartEdit && cartItem) {
@@ -61,53 +58,40 @@
 	});
 
 	const handleSubmit = async (event: Event) => {
+		let isUpdating = $state(true);
 		event.preventDefault();
 		const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
 		const updateType = submitter?.name as UpdateType;
-		const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
-		const { linesIdsToRemove, linesToEdit } = prepareDeleteLines($cart, cartItem);
 
-		///////////////
 		switch (updateType) {
 			case 'add':
 				if (!selectedProduct) {
 					return 'Please select a product';
 				}
-				addProductWithAddOnsToCart(cart, selectedProduct, selectedVariant, selectedAddOns, addOns);
-
-				console.log($cart, 'updated cart');
+				pleaseAddItemToCart(cart, selectedProduct, selectedVariant, selectedAddOns, addOns);
 
 				break;
 			case 'delete':
-				deleteItemFromCart(cart, cartItem);
-
-				// await removeFromCart($cart.id, linesIdsToRemove);
-				// await editCartItem($cart.id, linesToEdit);
-				// if (!cartItem) {
-				// 	return 'No item in cart';
-				// }
-				// message = await deleteItem(cart, cartItem);
-
-				// isCartEdit.update(() => false);
+				if (!cart || !cartItem) return 'no item to delete';
+				isCartEdit.update(() => false);
+				pleaseRemovefromCart(cart, cartItem);
 
 				break;
 			case 'edit':
-				// const lines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
-				// const { linesIdsToRemove, linesToEdit } = prepareDeleteLines(cart, cartItem!);
+				if (!selectedProduct) {
+					return 'Please select a product';
+				}
+				if (!cart || !cartItem) return 'no item to delete';
+				isCartEdit.update(() => false);
+				pleaseEditCartItem(
+					cart,
+					selectedProduct,
+					selectedVariant,
+					selectedAddOns,
+					addOns,
+					cartItem
+				);
 
-				await removeFromCart($cart.id, linesIdsToRemove);
-				await editCartItem($cart.id, linesToEdit);
-				await addItem($cart, lines);
-				// console.log(selectedVariant, 'selectedVariant');
-
-				// editCartTest(
-				// 	cart,
-				// 	selectedProduct,
-				// 	selectedVariant,
-				// 	selectedAddOns,
-				// 	collectionProducts,
-				// 	cartItem
-				// );
 				break;
 		}
 	};
@@ -200,9 +184,8 @@
 			</div>
 		{/if}
 		<button type="submit" name={$isCartEdit ? 'edit' : 'add'}
-			>{$isCartEdit ? 'update item' : 'add to cart'}</button
+			>{$isCartEdit ? (isUpdating ? 'updating...' : 'update item') : 'add to cart'}</button
 		>
-		<div>{message}</div>
 		{#if $isCartEdit}
 			<button type="submit" name="delete"
 				>{cartItem!.quantity > 1
