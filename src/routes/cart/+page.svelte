@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CartItem, Collection, Product } from '$lib/shopify/types';
+	import type { CartItem, Collection } from '$lib/shopify/types';
 	import { getContext, onMount } from 'svelte';
 	import type { CartContext } from '../+layout.svelte';
 	import { addOnsKeys } from '$lib/constants';
@@ -22,8 +22,9 @@
 		collection = collections.find((c) => item.attributes.some((a) => a.value === c.title));
 	};
 
-	const handleIncrement = (item: CartItem) => {
-		incrementCartItem(cart, item);
+	const handleIncrement = (item: CartItem, qty: number) => {
+		incrementCartItem(cart, item, qty);
+		console.log($cart);
 	};
 
 	onMount(async () => {
@@ -68,9 +69,9 @@
 							{/each}
 						</div>
 						<div style="display: flex; gap: 10px;">
-							<button onclick={() => handleIncrement(item)}>+</button>
+							<button onclick={() => handleIncrement(item, 1)}>+</button>
 							<p>{item.quantity}</p>
-							<div>-</div>
+							<button onclick={() => handleIncrement(item, -1)}>-</button>
 						</div>
 						<div>{calculateTotalCosts(item)}</div>
 					</div>

@@ -111,6 +111,10 @@ export const deleteItemFromCart = (cart: Writable<Cart>, cartItem: CartItem) => 
 
 	let updatedLines = cartValue.lines.filter((line) => line.id !== cartItem.id);
 
+	const isProductRemaining = updatedLines.some(
+		(line) => line.merchandise.product.productType === 'product'
+	);
+
 	const productAddOnsCartLines = cartValue.lines.filter((line) =>
 		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
 	);
@@ -118,7 +122,7 @@ export const deleteItemFromCart = (cart: Writable<Cart>, cartItem: CartItem) => 
 	productAddOnsCartLines.forEach((addOnLine) => {
 		const newQty = addOnLine.quantity - 1;
 
-		if (newQty <= 0) {
+		if (newQty <= 0 || !isProductRemaining) {
 			updatedLines = updatedLines.filter((line) => line.id !== addOnLine.id);
 
 			linesIdsToRemove.push(addOnLine.id);
@@ -211,24 +215,69 @@ export const pleaseEditCartItem = async (
 	// return 'completed';
 };
 
-export const incrementCartItem = async (cart: Writable<Cart>, cartItem: CartItem) => {
+export const incrementCartItem = async (cart: Writable<Cart>, cartItem: CartItem, qty: number) => {
 	const cartValue = get(cart);
 	console.log(cartValue, 'cart');
 	console.log(cartItem, 'cartItem');
 
+	const linesToEdit: Line[] = [];
+
+	linesToEdit.push({
+		id: cartItem.id!,
+		merchandiseId: cartItem.merchandise.id,
+		quantity: cartItem.quantity + qty,
+		attributes: cartItem.attributes
+	});
+
 	const updatedItem = {
 		...cartItem,
-		quantity: cartItem.quantity + 1,
+		quantity: cartItem.quantity + qty,
 		cost: {
 			totalAmount: {
 				amount: calculateItemCost(
-					cartItem.quantity + 1,
+					cartItem.quantity + qty,
 					(Number(cartItem.cost.totalAmount.amount) / cartItem.quantity).toString()
 				),
 				currencyCode: cartItem.cost.totalAmount.currencyCode
 			}
 		}
 	};
+	let updatedLines = cartValue.lines.map((item) => (item.id === cartItem.id ? updatedItem : item));
 
-	console.log(updatedItem, 'updatedItem');
+	const productAddOnsCartLines = updatedLines.filter((line) =>
+		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
+	);
+
+	productAddOnsCartLines.forEach((addOnLine) => {
+		const newQty = addOnLine.quantity + qty;
+
+		linesToEdit.push({
+			id: addOnLine.id!,
+			merchandiseId: addOnLine.merchandise.id,
+			quantity: newQty,
+			attributes: addOnLine.attributes
+		});
+
+		const updatedItem = {
+			...addOnLine,
+			quantity: newQty,
+			cost: {
+				totalAmount: {
+					amount: calculateItemCost(
+						newQty,
+						(Number(addOnLine.cost.totalAmount.amount) / addOnLine.quantity).toString()
+					),
+					currencyCode: addOnLine.cost.totalAmount.currencyCode
+				}
+			}
+		};
+
+		updatedLines = updatedLines.map((item) => (item.id === addOnLine.id ? updatedItem : item));
+	});
+
+	const { totalQuantity, cost } = updateCartTotals(updatedLines);
+
+	cart.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
+
+	await editCartItem(cartValue.id, linesToEdit);
 };
