@@ -17,7 +17,7 @@ export type AddOn = {
 	id: string;
 	title: string;
 	checked: boolean;
-	value?: FormDataEntryValue | undefined;
+	value: FormDataEntryValue;
 };
 
 export type UpdateType = 'plus' | 'minus' | 'delete' | 'edit' | 'add';
@@ -69,7 +69,7 @@ export const addProductToCart = (
 ) => {
 	const attributes = [
 		{ key: 'Order type', value: selectedProduct.collections.edges[0].node.title },
-		...selectedAddOns.map((addOn) => ({ key: addOn.title, value: addOn.value! }))
+		...selectedAddOns.map((addOn) => ({ key: addOn.title, value: addOn.value }))
 	];
 
 	const productVariant = selectedVariant || selectedProduct.variants[0];
@@ -180,8 +180,13 @@ export const pleaseRemovefromCart = async (cart: Writable<Cart>, cartItem: CartI
 
 	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cart, cartItem);
 
-	await removeFromCart(cartValue.id, linesIdsToRemove);
-	await editCartItem(cartValue.id, linesToEdit);
+	await Promise.all([
+		removeFromCart(cartValue.id, linesIdsToRemove),
+		editCartItem(cartValue.id, linesToEdit)
+	]);
+
+	// await removeFromCart(cartValue.id, linesIdsToRemove);
+	// await editCartItem(cartValue.id, linesToEdit);
 };
 
 export const pleaseEditCartItem = async (
@@ -213,8 +218,6 @@ export const pleaseEditCartItem = async (
 
 export const incrementCartItem = async (cart: Writable<Cart>, cartItem: CartItem, qty: number) => {
 	const cartValue = get(cart);
-	console.log(cartValue, 'cart');
-	console.log(cartItem, 'cartItem');
 
 	const linesToEdit: Line[] = [];
 

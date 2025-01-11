@@ -119,7 +119,7 @@ export type CartProduct = {
 };
 
 export type CartItem = {
-	id: string | undefined;
+	id: string;
 	attributes: Attributes[];
 	quantity: number;
 	cost: {

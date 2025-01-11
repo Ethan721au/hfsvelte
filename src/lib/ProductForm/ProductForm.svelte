@@ -51,14 +51,13 @@
 					id: addon.id,
 					title: addon.title,
 					checked: true,
-					value: cartItem.attributes.find((attribute) => attribute.key === addon.title)?.value
+					value: cartItem.attributes.find((attribute) => attribute.key === addon.title)?.value ?? ''
 				}));
 			}
 		}
 	});
 
 	const handleSubmit = async (event: Event) => {
-		// let isUpdating = $state(true);
 		event.preventDefault();
 		const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
 		const updateType = submitter?.name as UpdateType;
@@ -75,7 +74,6 @@
 				if (!cart || !cartItem) return 'no item to delete';
 				isCartEdit.update(() => false);
 				pleaseRemovefromCart(cart, cartItem);
-				// console.log($cart, 'cart');
 
 				break;
 			case 'edit':

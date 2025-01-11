@@ -78,7 +78,7 @@ export function createOrUpdateCartItem(
 	const totalAmount = calculateItemCost(quantity, variant.price.amount);
 
 	return {
-		id: existingItem?.id,
+		id: existingItem?.id ?? '',
 		quantity,
 		attributes: attributes || [],
 		cost: {
