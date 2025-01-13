@@ -73,7 +73,8 @@
 					selectedProduct,
 					selectedVariant,
 					selectedAddOns,
-					addOns
+					addOns,
+					collection
 				);
 				if (message === 'completed') isCartUpdating.update(() => false);
 
@@ -97,7 +98,8 @@
 					selectedVariant,
 					selectedAddOns,
 					addOns,
-					cartItem
+					cartItem,
+					collection
 				);
 				if (message === 'completed') isCartUpdating.update(() => false);
 
@@ -192,7 +194,7 @@
 				{/if}
 			</div>
 		{/if}
-		<button type="submit" name={$isCartEdit ? 'edit' : 'add'}
+		<button type="submit" name={$isCartEdit ? 'edit' : 'add'} disabled={$isCartUpdating}
 			>{$isCartEdit ? ($isCartUpdating ? 'updating...' : 'update item') : 'add to cart'}</button
 		>
 		{#if $isCartEdit}

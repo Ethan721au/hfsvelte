@@ -1,4 +1,4 @@
-import type { Cart, CartItem, Product, ProductVariant } from '$lib/shopify/types';
+import type { Cart, CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 import type { Writable } from 'svelte/store';
 import { addItem, createOrUpdateCartItem, prepareCartLines } from './utils';
 import { get } from 'svelte/store';
@@ -27,11 +27,18 @@ export const addProductWithAddOnsToCart = (
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOn[],
-	addOns: Product
+	addOns: Product,
+	collection: Collection
 ) => {
 	const cartValue = get(cart);
 
-	const productCart = addProductToCart(cartValue, selectedProduct, selectedVariant, selectedAddOns);
+	const productCart = addProductToCart(
+		cartValue,
+		selectedProduct,
+		selectedVariant,
+		selectedAddOns,
+		collection
+	);
 
 	const updatedLines = selectedAddOns.reduce((lines, addOn) => {
 		const addOnDetails = addOns.variants.find((variant) => variant.id === addOn.id);
@@ -65,10 +72,11 @@ export const addProductToCart = (
 	cart: Cart,
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
-	selectedAddOns: AddOn[]
+	selectedAddOns: AddOn[],
+	collection: Collection
 ) => {
 	const attributes = [
-		{ key: 'Order type', value: selectedProduct.collections.edges[0].node.title },
+		{ key: 'Order type', value: collection.title },
 		...selectedAddOns.map((addOn) => ({ key: addOn.title, value: addOn.value }))
 	];
 
@@ -160,7 +168,8 @@ export const pleaseAddItemToCart = async (
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOn[],
-	addOns: Product
+	addOns: Product,
+	collection: Collection
 ) => {
 	const cartValue = get(cart);
 
@@ -169,10 +178,12 @@ export const pleaseAddItemToCart = async (
 		selectedProduct,
 		selectedVariant,
 		selectedAddOns,
-		addOns
+		addOns,
+		collection
 	);
 
-	await addItem(cartValue, newLines);
+	const updatedCart = await addItem(cartValue, newLines);
+	cart.set(updatedCart as Cart);
 	return 'completed';
 };
 
@@ -197,7 +208,8 @@ export const pleaseEditCartItem = async (
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOn[],
 	addOns: Product,
-	cartItem: CartItem
+	cartItem: CartItem,
+	collection: Collection
 ) => {
 	const cartValue = get(cart);
 
@@ -208,7 +220,8 @@ export const pleaseEditCartItem = async (
 		selectedProduct,
 		selectedVariant,
 		selectedAddOns,
-		addOns
+		addOns,
+		collection
 	);
 
 	await removeFromCart(cartValue.id, linesIdsToRemove);

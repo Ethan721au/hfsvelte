@@ -60,8 +60,8 @@ export async function addItem(
 	}
 
 	try {
-		await addToCart(cart.id, lines);
-		return 'Item added to cart';
+		const updatedCart = await addToCart(cart.id, lines);
+		return updatedCart;
 	} catch (error) {
 		console.log(error);
 		return 'Error adding item to cart';
@@ -74,6 +74,7 @@ export function createOrUpdateCartItem(
 	product: Product,
 	attributes?: Attributes[]
 ): CartItem {
+	console.log(product, 'product');
 	const quantity = existingItem ? existingItem.quantity + 1 : 1;
 	const totalAmount = calculateItemCost(quantity, variant.price.amount);
 
@@ -96,6 +97,9 @@ export function createOrUpdateCartItem(
 				handle: product.handle,
 				title: product.title,
 				featuredImage: product.featuredImage
+				// variants: {
+				// 	edges: product.variants.map((variant) => ({ node: variant }))
+				// }
 			}
 		}
 	};

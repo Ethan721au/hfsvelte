@@ -70,13 +70,14 @@
 							{/each}
 						</div>
 						<div style="display: flex; gap: 10px;">
-							<button onclick={() => handleIncrement(item, 1)}>+</button>
+							<button onclick={() => handleIncrement(item, 1)} disabled={$isCartUpdating}>+</button>
 							<p>{item.quantity}</p>
-							<button onclick={() => handleIncrement(item, -1)}>-</button>
+							<button onclick={() => handleIncrement(item, -1)} disabled={$isCartUpdating}>-</button
+							>
 						</div>
 						<div>{calculateTotalCosts(item)}</div>
 					</div>
-					<button onclick={() => handleCartEdit(item)}
+					<button onclick={() => handleCartEdit(item)} disabled={$isCartUpdating}
 						>{$isCartUpdating ? 'Cart is updating...' : 'Edit item'}</button
 					>
 				</div>
