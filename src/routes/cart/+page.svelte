@@ -8,7 +8,7 @@
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
 	import { incrementCartItem } from '$lib/Cart/actions';
 
-	const { cart, isCartEdit } = getContext<CartContext>('cart');
+	const { cart, isCartEdit, isCartUpdating } = getContext<CartContext>('cart');
 	let collections: Collection[] = $state([]);
 	let collection: Collection | undefined = $state(undefined);
 	let cartItem: CartItem | undefined = $state(undefined);
@@ -22,9 +22,10 @@
 		collection = collections.find((c) => item.attributes.some((a) => a.value === c.title));
 	};
 
-	const handleIncrement = (item: CartItem, qty: number) => {
-		incrementCartItem(cart, item, qty);
-		console.log($cart);
+	const handleIncrement = async (item: CartItem, qty: number) => {
+		isCartUpdating.update(() => true);
+		const message = await incrementCartItem(cart, item, qty);
+		if (message === 'completed') isCartUpdating.update(() => false);
 	};
 
 	onMount(async () => {
@@ -75,7 +76,9 @@
 						</div>
 						<div>{calculateTotalCosts(item)}</div>
 					</div>
-					<button onclick={() => handleCartEdit(item)}>Edit item</button>
+					<button onclick={() => handleCartEdit(item)}
+						>{$isCartUpdating ? 'Cart is updating...' : 'Edit item'}</button
+					>
 				</div>
 			{/each}
 		{:else}

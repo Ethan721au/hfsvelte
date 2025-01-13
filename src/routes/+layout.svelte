@@ -7,13 +7,18 @@
 	import DynamicOverlay from '$lib/DynamicOverlay/DynamicOverlay.svelte';
 	import { writable, type Writable } from 'svelte/store';
 
-	export type CartContext = { cart: Writable<Cart>; isCartEdit: Writable<boolean> };
+	export type CartContext = {
+		cart: Writable<Cart>;
+		isCartEdit: Writable<boolean>;
+		isCartUpdating: Writable<boolean>;
+	};
 
 	let { children, data }: { children: Snippet; data: PageData } = $props();
 	const cart = writable(data.cart);
 	const isCartEdit = writable(false);
+	const isCartUpdating = writable(false);
 
-	setContext('cart', { cart, isCartEdit });
+	setContext('cart', { cart, isCartEdit, isCartUpdating });
 </script>
 
 <div>

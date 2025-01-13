@@ -173,6 +173,7 @@ export const pleaseAddItemToCart = async (
 	);
 
 	await addItem(cartValue, newLines);
+	return 'completed';
 };
 
 export const pleaseRemovefromCart = async (cart: Writable<Cart>, cartItem: CartItem) => {
@@ -180,13 +181,14 @@ export const pleaseRemovefromCart = async (cart: Writable<Cart>, cartItem: CartI
 
 	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cart, cartItem);
 
-	await Promise.all([
-		removeFromCart(cartValue.id, linesIdsToRemove),
-		editCartItem(cartValue.id, linesToEdit)
-	]);
+	// await Promise.all([
+	// 	removeFromCart(cartValue.id, linesIdsToRemove),
+	// 	editCartItem(cartValue.id, linesToEdit)
+	// ]);
 
-	// await removeFromCart(cartValue.id, linesIdsToRemove);
-	// await editCartItem(cartValue.id, linesToEdit);
+	await removeFromCart(cartValue.id, linesIdsToRemove);
+	await editCartItem(cartValue.id, linesToEdit);
+	return 'completed';
 };
 
 export const pleaseEditCartItem = async (
@@ -212,6 +214,13 @@ export const pleaseEditCartItem = async (
 	await removeFromCart(cartValue.id, linesIdsToRemove);
 	await editCartItem(cartValue.id, linesToEdit);
 	await addItem(cartValue, newLines);
+	return 'completed';
+
+	// await Promise.all([
+	// 	removeFromCart(cartValue.id, linesIdsToRemove),
+	// 	editCartItem(cartValue.id, linesToEdit),
+	// 	addItem(cartValue, newLines)
+	// ]);
 
 	// return 'completed';
 };
@@ -279,6 +288,7 @@ export const incrementCartItem = async (cart: Writable<Cart>, cartItem: CartItem
 	cart.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
 
 	await editCartItem(cartValue.id, linesToEdit);
+	return 'completed';
 };
 
 export async function createCartAndSetCookie(cookies: Cookies) {

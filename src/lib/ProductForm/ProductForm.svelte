@@ -18,7 +18,7 @@
 		cartItem?: CartItem;
 	};
 
-	let { cart, isCartEdit } = getContext<CartContext>('cart');
+	let { cart, isCartEdit, isCartUpdating } = getContext<CartContext>('cart');
 	let { collection, cartItem }: ProductFormProps = $props();
 	let collectionProducts: Product[] = $state([]);
 	let selectedProduct: Product | undefined = $state(undefined);
@@ -32,7 +32,7 @@
 		productsWithVariants.find((p) => p.title === selectedProduct?.title)?.variants
 	);
 	let addOns = $derived(collectionProducts.filter((p) => p.productType === 'add-on')[0]);
-	let isUpdating = $state(false);
+	let message = $state('');
 
 	$effect(() => {
 		if ($cart && $isCartEdit && cartItem) {
@@ -58,6 +58,7 @@
 	});
 
 	const handleSubmit = async (event: Event) => {
+		isCartUpdating.update(() => true);
 		event.preventDefault();
 		const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
 		const updateType = submitter?.name as UpdateType;
@@ -67,13 +68,21 @@
 				if (!selectedProduct) {
 					return 'Please select a product';
 				}
-				pleaseAddItemToCart(cart, selectedProduct, selectedVariant, selectedAddOns, addOns);
+				message = await pleaseAddItemToCart(
+					cart,
+					selectedProduct,
+					selectedVariant,
+					selectedAddOns,
+					addOns
+				);
+				if (message === 'completed') isCartUpdating.update(() => false);
 
 				break;
 			case 'delete':
 				if (!cart || !cartItem) return 'no item to delete';
 				isCartEdit.update(() => false);
-				pleaseRemovefromCart(cart, cartItem);
+				message = await pleaseRemovefromCart(cart, cartItem);
+				if (message === 'completed') isCartUpdating.update(() => false);
 
 				break;
 			case 'edit':
@@ -82,7 +91,7 @@
 				}
 				if (!cart || !cartItem) return 'no item to delete';
 				isCartEdit.update(() => false);
-				pleaseEditCartItem(
+				message = await pleaseEditCartItem(
 					cart,
 					selectedProduct,
 					selectedVariant,
@@ -90,6 +99,7 @@
 					addOns,
 					cartItem
 				);
+				if (message === 'completed') isCartUpdating.update(() => false);
 
 				break;
 		}
@@ -183,7 +193,7 @@
 			</div>
 		{/if}
 		<button type="submit" name={$isCartEdit ? 'edit' : 'add'}
-			>{$isCartEdit ? (isUpdating ? 'updating...' : 'update item') : 'add to cart'}</button
+			>{$isCartEdit ? ($isCartUpdating ? 'updating...' : 'update item') : 'add to cart'}</button
 		>
 		{#if $isCartEdit}
 			<button type="submit" name="delete"
