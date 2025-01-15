@@ -12,13 +12,14 @@
 		type AddOn,
 		type UpdateType
 	} from '$lib/Cart/actions';
+	import { cartTesting2 } from '$lib/Cart/context.svelte';
 
 	type ProductFormProps = {
 		collection: Collection;
 		cartItem?: CartItem;
 	};
 
-	let { cart, isCartEdit, isCartUpdating } = getContext<CartContext>('cart');
+	let { isCartEdit, isCartUpdating } = getContext<CartContext>('cart');
 	let { collection, cartItem }: ProductFormProps = $props();
 	let collectionProducts: Product[] = $state([]);
 	let selectedProduct: Product | undefined = $state(undefined);
@@ -35,7 +36,7 @@
 	let message = $state('');
 
 	$effect(() => {
-		if ($cart && $isCartEdit && cartItem) {
+		if ($cartTesting2 && $isCartEdit && cartItem) {
 			selectedProduct = cartItem.merchandise.product;
 
 			selectedVariant = cartItem.merchandise.product.variants?.edges.find(
@@ -69,7 +70,6 @@
 					return 'Please select a product';
 				}
 				message = await pleaseAddItemToCart(
-					cart,
 					selectedProduct,
 					selectedVariant,
 					selectedAddOns,
@@ -80,9 +80,9 @@
 
 				break;
 			case 'delete':
-				if (!cart || !cartItem) return 'no item to delete';
+				if (!cartItem || !cartTesting2) return 'no item to delete';
 				isCartEdit.update(() => false);
-				message = await pleaseRemovefromCart(cart, cartItem);
+				message = await pleaseRemovefromCart(cartItem);
 				if (message === 'completed') isCartUpdating.update(() => false);
 
 				break;
@@ -90,10 +90,9 @@
 				if (!selectedProduct) {
 					return 'Please select a product';
 				}
-				if (!cart || !cartItem) return 'no item to delete';
+				if (!cartTesting2 || !cartItem) return 'no item to delete';
 				isCartEdit.update(() => false);
 				message = await pleaseEditCartItem(
-					cart,
 					selectedProduct,
 					selectedVariant,
 					selectedAddOns,

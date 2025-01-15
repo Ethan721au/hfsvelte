@@ -7,18 +7,17 @@
 	import { getCollections } from '$lib/shopify';
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
 	import { incrementCartItem } from '$lib/Cart/actions';
-	// import { isCartEdit2 } from '$lib/state.svelte';
+	import { cartTesting2 } from '$lib/Cart/context.svelte';
 
-	const { cart, isCartEdit, isCartUpdating } = getContext<CartContext>('cart');
+	const { isCartEdit, isCartUpdating } = getContext<CartContext>('cart');
 	let collections: Collection[] = $state([]);
 	let collection: Collection | undefined = $state(undefined);
 	let cartItem: CartItem | undefined = $state(undefined);
 	let cartItems: CartItem[] = $derived(
-		$cart.lines.filter((line) => !addOnsKeys.includes(line.merchandise.title))
+		$cartTesting2.lines.filter((line) => !addOnsKeys.includes(line.merchandise.title))
 	);
 
 	const handleCartEdit = (item: CartItem) => {
-		// isCartEdit2.value = true;
 		isCartEdit.update(() => true);
 		cartItem = item;
 		collection = collections.find((c) => item.attributes.some((a) => a.value === c.title));
@@ -26,7 +25,7 @@
 
 	const handleIncrement = async (item: CartItem, qty: number) => {
 		isCartUpdating.update(() => true);
-		const message = await incrementCartItem(cart, item, qty);
+		const message = await incrementCartItem(item, qty);
 		if (message === 'completed') isCartUpdating.update(() => false);
 	};
 
@@ -37,7 +36,7 @@
 	const calculateTotalCosts = (item: CartItem) => {
 		const productCosts = Number(item.cost.totalAmount.amount);
 
-		const addOnLines = $cart.lines.filter((line) =>
+		const addOnLines = $cartTesting2.lines.filter((line) =>
 			item.attributes.some((attr) => attr.key === line.merchandise.title)
 		);
 

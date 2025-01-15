@@ -1,10 +1,11 @@
 import type { Cart, CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
-import type { Writable } from 'svelte/store';
+// import type { Writable } from 'svelte/store';
 import { addItem, createOrUpdateCartItem, prepareCartLines } from './utils';
 import { get } from 'svelte/store';
 import { createCart, editCartItem, removeFromCart } from '$lib/shopify';
 import type { Cookies } from '@sveltejs/kit';
 import { addOnsKeys } from '$lib/constants';
+import { cartTesting2 } from './context.svelte';
 
 type Line = {
 	id: string;
@@ -23,14 +24,13 @@ export type AddOn = {
 export type UpdateType = 'plus' | 'minus' | 'delete' | 'edit' | 'add';
 
 export const addProductWithAddOnsToCart = (
-	cart: Writable<Cart>,
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOn[],
 	addOns: Product,
 	collection: Collection
 ) => {
-	const cartValue = get(cart);
+	const cartValue = get(cartTesting2);
 
 	const productCart = addProductToCart(
 		cartValue,
@@ -62,7 +62,8 @@ export const addProductWithAddOnsToCart = (
 		cost
 	};
 
-	cart.set(updatedCart);
+	// cart.set(updatedCart);
+	cartTesting2.set(updatedCart);
 
 	// const newLines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
 
@@ -107,8 +108,8 @@ export const addProductToCart = (
 	return { ...cart, lines, totalQuantity, cost };
 };
 
-export const deleteItemFromCart = (cart: Writable<Cart>, cartItem: CartItem) => {
-	const cartValue = get(cart);
+export const deleteItemFromCart = (cartItem: CartItem) => {
+	const cartValue = get(cartTesting2);
 
 	const linesIdsToRemove = [cartItem.id];
 
@@ -159,41 +160,35 @@ export const deleteItemFromCart = (cart: Writable<Cart>, cartItem: CartItem) => 
 
 	const { totalQuantity, cost } = updateCartTotals(updatedLines);
 
-	cart.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
+	cartTesting2.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
 
 	return { linesIdsToRemove, linesToEdit };
 };
 
 export const pleaseAddItemToCart = async (
-	cart: Writable<Cart>,
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOn[],
 	addOns: Product,
 	collection: Collection
 ) => {
-	const cartValue = get(cart);
+	// const cartValue = get(cart);
+	const cartValueTesting = get(cartTesting2);
 
-	addProductWithAddOnsToCart(
-		cart,
-		selectedProduct,
-		selectedVariant,
-		selectedAddOns,
-		addOns,
-		collection
-	);
+	addProductWithAddOnsToCart(selectedProduct, selectedVariant, selectedAddOns, addOns, collection);
 
 	const newLines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
 
-	const updatedCart = await addItem(cartValue, newLines);
-	cart.set(updatedCart as Cart);
+	const updatedCart = await addItem(cartValueTesting, newLines);
+	// cart.set(updatedCart as Cart);
+	cartTesting2.set(updatedCart as Cart);
 	return 'completed';
 };
 
-export const pleaseRemovefromCart = async (cart: Writable<Cart>, cartItem: CartItem) => {
-	const cartValue = get(cart);
+export const pleaseRemovefromCart = async (cartItem: CartItem) => {
+	const cartValue = get(cartTesting2);
 
-	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cart, cartItem);
+	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cartItem);
 
 	// await Promise.all([
 	// 	removeFromCart(cartValue.id, linesIdsToRemove),
@@ -206,7 +201,6 @@ export const pleaseRemovefromCart = async (cart: Writable<Cart>, cartItem: CartI
 };
 
 export const pleaseEditCartItem = async (
-	cart: Writable<Cart>,
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOn[],
@@ -214,12 +208,11 @@ export const pleaseEditCartItem = async (
 	cartItem: CartItem,
 	collection: Collection
 ) => {
-	const cartValue = get(cart);
+	const cartValue = get(cartTesting2);
 
-	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cart, cartItem);
+	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cartItem);
 
 	const newLines = addProductWithAddOnsToCart(
-		cart,
 		selectedProduct,
 		selectedVariant,
 		selectedAddOns,
@@ -241,8 +234,8 @@ export const pleaseEditCartItem = async (
 	// return 'completed';
 };
 
-export const incrementCartItem = async (cart: Writable<Cart>, cartItem: CartItem, qty: number) => {
-	const cartValue = get(cart);
+export const incrementCartItem = async (cartItem: CartItem, qty: number) => {
+	const cartValue = get(cartTesting2);
 
 	const linesToEdit: Line[] = [];
 
@@ -301,7 +294,8 @@ export const incrementCartItem = async (cart: Writable<Cart>, cartItem: CartItem
 
 	const { totalQuantity, cost } = updateCartTotals(updatedLines);
 
-	cart.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
+	// cart.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
+	cartTesting2.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
 
 	await editCartItem(cartValue.id, linesToEdit);
 	return 'completed';
