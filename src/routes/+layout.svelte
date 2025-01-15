@@ -7,6 +7,8 @@
 	import DynamicOverlay from '$lib/DynamicOverlay/DynamicOverlay.svelte';
 	import { writable, type Writable } from 'svelte/store';
 
+	// update this code with $state: https://svelte.dev/docs/svelte/stores
+
 	export type CartContext = {
 		cart: Writable<Cart>;
 		isCartEdit: Writable<boolean>;

@@ -7,6 +7,7 @@
 	import { getCollections } from '$lib/shopify';
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
 	import { incrementCartItem } from '$lib/Cart/actions';
+	// import { isCartEdit2 } from '$lib/state.svelte';
 
 	const { cart, isCartEdit, isCartUpdating } = getContext<CartContext>('cart');
 	let collections: Collection[] = $state([]);
@@ -17,6 +18,7 @@
 	);
 
 	const handleCartEdit = (item: CartItem) => {
+		// isCartEdit2.value = true;
 		isCartEdit.update(() => true);
 		cartItem = item;
 		collection = collections.find((c) => item.attributes.some((a) => a.value === c.title));

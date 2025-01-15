@@ -224,7 +224,6 @@ export async function createCart(): Promise<Cart> {
 }
 
 export async function getCart(cartId: string | undefined): Promise<Cart | undefined> {
-	console.log(cartId, 'cartId');
 	if (!cartId) return undefined;
 
 	const res = await shopifyFetch<ShopifyCartOperation>({

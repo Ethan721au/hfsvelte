@@ -45,6 +45,7 @@ export const addProductWithAddOnsToCart = (
 		if (!addOnDetails) return lines;
 
 		const existingItem = lines.find((item) => item.merchandise.id === addOn.id);
+
 		const updatedAddOn = createOrUpdateCartItem(existingItem, addOnDetails, addOns);
 
 		return existingItem
@@ -63,9 +64,9 @@ export const addProductWithAddOnsToCart = (
 
 	cart.set(updatedCart);
 
-	const newLines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
+	// const newLines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
 
-	return newLines;
+	// return newLines;
 };
 
 export const addProductToCart = (
@@ -173,7 +174,7 @@ export const pleaseAddItemToCart = async (
 ) => {
 	const cartValue = get(cart);
 
-	const newLines = addProductWithAddOnsToCart(
+	addProductWithAddOnsToCart(
 		cart,
 		selectedProduct,
 		selectedVariant,
@@ -181,6 +182,8 @@ export const pleaseAddItemToCart = async (
 		addOns,
 		collection
 	);
+
+	const newLines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
 
 	const updatedCart = await addItem(cartValue, newLines);
 	cart.set(updatedCart as Cart);
