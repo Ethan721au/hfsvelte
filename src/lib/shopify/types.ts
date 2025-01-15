@@ -137,7 +137,7 @@ export type CartItem = {
 };
 
 export type ShopifyCart = {
-	id: string;
+	id: string | undefined;
 	attributes: Attributes[];
 	checkoutUrl: string;
 	cost: {

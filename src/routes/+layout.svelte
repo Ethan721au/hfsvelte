@@ -17,7 +17,7 @@
 
 	let { children, data }: { children: Snippet; data: PageData } = $props();
 	// const cart = writable(data.cart);
-	cartTesting2.set(data.cart!);
+	if (data.cart) cartTesting2.set(data.cart);
 	const isCartEdit = writable(false);
 	const isCartUpdating = writable(false);
 

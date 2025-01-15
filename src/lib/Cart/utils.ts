@@ -55,7 +55,7 @@ export async function addItem(
 	cart: Cart,
 	lines: { merchandiseId: string; quantity: number; attributes: Attributes[] }[]
 ) {
-	if (!cart || !lines) {
+	if (!cart.id || !lines) {
 		return 'Error adding item to cart';
 	}
 

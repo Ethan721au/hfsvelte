@@ -4,7 +4,20 @@ import { writable, type Writable } from 'svelte/store';
 import { createCartAndSetCookie, updateCartTotals } from './actions';
 import type { Cart } from '$lib/shopify/types';
 
-export const cartTesting2: Writable<Cart> = writable();
+const emptyCart: Cart = {
+	id: undefined,
+	checkoutUrl: '',
+	totalQuantity: 0,
+	attributes: [],
+	lines: [],
+	cost: {
+		subtotalAmount: { amount: '0', currencyCode: 'USD' },
+		totalAmount: { amount: '0', currencyCode: 'USD' },
+		totalTaxAmount: { amount: '0', currencyCode: 'USD' }
+	}
+};
+
+export const cartTesting2: Writable<Cart> = writable(emptyCart);
 
 export const fetchOrCreateCart = async (cookies: Cookies) => {
 	const cartId = cookies.get('cartId');
