@@ -1,11 +1,13 @@
-import { getCart } from '$lib/shopify';
+import { createCart, getCart } from '$lib/shopify';
 import type { Cookies } from '@sveltejs/kit';
 import { writable, type Writable } from 'svelte/store';
-import { createCartAndSetCookie, updateCartTotals } from './actions';
+import { updateCartTotals } from './actions';
 import type { Cart } from '$lib/shopify/types';
 
+// need to remove the attributes lines as we are not using it
+
 const emptyCart: Cart = {
-	id: undefined,
+	id: '',
 	checkoutUrl: '',
 	totalQuantity: 0,
 	attributes: [],
@@ -18,6 +20,8 @@ const emptyCart: Cart = {
 };
 
 export const cartTesting2: Writable<Cart> = writable(emptyCart);
+export const isCartEdit2 = writable(false);
+export const isCartUpdating2 = writable(false);
 
 export const fetchOrCreateCart = async (cookies: Cookies) => {
 	const cartId = cookies.get('cartId');
@@ -37,3 +41,14 @@ export const fetchOrCreateCart = async (cookies: Cookies) => {
 		}
 	}
 };
+
+export async function createCartAndSetCookie(cookies: Cookies) {
+	const cart = await createCart();
+	cookies.set('cartId', cart.id, {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'strict',
+		maxAge: 600 * 60
+	});
+	return cart;
+}
