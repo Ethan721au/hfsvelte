@@ -4,13 +4,10 @@ import { writable, type Writable } from 'svelte/store';
 import { updateCartTotals } from './actions';
 import type { Cart } from '$lib/shopify/types';
 
-// need to remove the attributes lines as we are not using it
-
 const emptyCart: Cart = {
 	id: '',
 	checkoutUrl: '',
 	totalQuantity: 0,
-	attributes: [],
 	lines: [],
 	cost: {
 		subtotalAmount: { amount: '0', currencyCode: 'USD' },
@@ -19,9 +16,9 @@ const emptyCart: Cart = {
 	}
 };
 
-export const cartTesting2: Writable<Cart> = writable(emptyCart);
-export const isCartEdit2 = writable(false);
-export const isCartUpdating2 = writable(false);
+export const cart: Writable<Cart> = writable(emptyCart);
+export const isCartEdit = writable(false);
+export const isCartUpdate = writable(false);
 
 export const fetchOrCreateCart = async (cookies: Cookies) => {
 	const cartId = cookies.get('cartId');

@@ -5,7 +5,7 @@ import { get } from 'svelte/store';
 import { createCart, editCartItem, removeFromCart } from '$lib/shopify';
 import type { Cookies } from '@sveltejs/kit';
 import { addOnsKeys } from '$lib/constants';
-import { cartTesting2 } from './context.svelte';
+import { cart } from './context.svelte';
 
 type Line = {
 	id: string;
@@ -30,7 +30,7 @@ export const addProductWithAddOnsToCart = (
 	addOns: Product,
 	collection: Collection
 ) => {
-	const cartValue = get(cartTesting2);
+	const cartValue = get(cart);
 
 	const productCart = addProductToCart(
 		cartValue,
@@ -63,7 +63,7 @@ export const addProductWithAddOnsToCart = (
 	};
 
 	// cart.set(updatedCart);
-	cartTesting2.set(updatedCart);
+	cart.set(updatedCart);
 
 	// const newLines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
 
@@ -109,7 +109,7 @@ export const addProductToCart = (
 };
 
 export const deleteItemFromCart = (cartItem: CartItem) => {
-	const cartValue = get(cartTesting2);
+	const cartValue = get(cart);
 
 	const linesIdsToRemove = [cartItem.id];
 
@@ -160,7 +160,7 @@ export const deleteItemFromCart = (cartItem: CartItem) => {
 
 	const { totalQuantity, cost } = updateCartTotals(updatedLines);
 
-	cartTesting2.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
+	cart.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
 
 	return { linesIdsToRemove, linesToEdit };
 };
@@ -173,7 +173,7 @@ export const pleaseAddItemToCart = async (
 	collection: Collection
 ) => {
 	// const cartValue = get(cart);
-	const cartValueTesting = get(cartTesting2);
+	const cartValueTesting = get(cart);
 
 	addProductWithAddOnsToCart(selectedProduct, selectedVariant, selectedAddOns, addOns, collection);
 
@@ -181,12 +181,12 @@ export const pleaseAddItemToCart = async (
 
 	const updatedCart = await addItem(cartValueTesting, newLines);
 	// cart.set(updatedCart as Cart);
-	cartTesting2.set(updatedCart as Cart);
+	cart.set(updatedCart as Cart);
 	return 'completed';
 };
 
 export const pleaseRemovefromCart = async (cartItem: CartItem) => {
-	const cartValue = get(cartTesting2);
+	const cartValue = get(cart);
 
 	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cartItem);
 
@@ -208,7 +208,7 @@ export const pleaseEditCartItem = async (
 	cartItem: CartItem,
 	collection: Collection
 ) => {
-	const cartValue = get(cartTesting2);
+	const cartValue = get(cart);
 
 	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cartItem);
 
@@ -235,7 +235,7 @@ export const pleaseEditCartItem = async (
 };
 
 export const incrementCartItem = async (cartItem: CartItem, qty: number) => {
-	const cartValue = get(cartTesting2);
+	const cartValue = get(cart);
 
 	const linesToEdit: Line[] = [];
 
@@ -295,7 +295,7 @@ export const incrementCartItem = async (cartItem: CartItem, qty: number) => {
 	const { totalQuantity, cost } = updateCartTotals(updatedLines);
 
 	// cart.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
-	cartTesting2.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
+	cart.set({ ...cartValue, lines: updatedLines, totalQuantity, cost });
 
 	await editCartItem(cartValue.id, linesToEdit);
 	return 'completed';

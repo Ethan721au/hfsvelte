@@ -4,7 +4,7 @@
 	import { getCollectionProducts } from '$lib/shopify';
 	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
 	import { onMount } from 'svelte';
-	// import type { CartContext } from '../../routes/+layout.svelte';
+
 	import {
 		pleaseAddItemToCart,
 		pleaseEditCartItem,
@@ -12,14 +12,13 @@
 		type AddOn,
 		type UpdateType
 	} from '$lib/Cart/actions';
-	import { cartTesting2, isCartEdit2, isCartUpdating2 } from '$lib/Cart/context.svelte';
+	import { cart, isCartEdit, isCartUpdate } from '$lib/Cart/context.svelte';
 
 	type ProductFormProps = {
 		collection: Collection;
 		cartItem?: CartItem;
 	};
 
-	// let { isCartEdit, isCartUpdating } = getContext<CartContext>('cart');
 	let { collection, cartItem }: ProductFormProps = $props();
 	let collectionProducts: Product[] = $state([]);
 	let selectedProduct: Product | undefined = $state(undefined);
@@ -36,7 +35,7 @@
 	let message = $state('');
 
 	$effect(() => {
-		if ($cartTesting2 && $isCartEdit2 && cartItem) {
+		if ($cart && $isCartEdit && cartItem) {
 			selectedProduct = cartItem.merchandise.product;
 
 			selectedVariant = cartItem.merchandise.product.variants?.edges.find(
@@ -59,8 +58,7 @@
 	});
 
 	const handleSubmit = async (event: Event) => {
-		// isCartUpdating.update(() => true);
-		isCartUpdating2.set(true);
+		isCartUpdate.set(true);
 		event.preventDefault();
 		const submitter = (event as SubmitEvent).submitter as HTMLButtonElement;
 		const updateType = submitter?.name as UpdateType;
@@ -77,24 +75,22 @@
 					addOns,
 					collection
 				);
-				if (message === 'completed') isCartUpdating2.set(false);
+				if (message === 'completed') isCartUpdate.set(false);
 
 				break;
 			case 'delete':
-				if (!cartItem || !cartTesting2) return 'no item to delete';
-				// isCartEdit.update(() => false);
-				isCartEdit2.set(false);
+				if (!cartItem || !cart) return 'no item to delete';
+				isCartEdit.set(false);
 				message = await pleaseRemovefromCart(cartItem);
-				if (message === 'completed') isCartUpdating2.set(false);
+				if (message === 'completed') isCartUpdate.set(false);
 
 				break;
 			case 'edit':
 				if (!selectedProduct) {
 					return 'Please select a product';
 				}
-				if (!cartTesting2 || !cartItem) return 'no item to delete';
-				// isCartEdit.update(() => false);
-				isCartEdit2.set(false);
+				if (!cart || !cartItem) return 'no item to delete';
+				isCartEdit.set(false);
 				message = await pleaseEditCartItem(
 					selectedProduct,
 					selectedVariant,
@@ -103,7 +99,7 @@
 					cartItem,
 					collection
 				);
-				if (message === 'completed') isCartUpdating2.set(false);
+				if (message === 'completed') isCartUpdate.set(false);
 
 				break;
 		}
@@ -196,10 +192,10 @@
 				{/if}
 			</div>
 		{/if}
-		<button type="submit" name={$isCartEdit2 ? 'edit' : 'add'} disabled={$isCartUpdating2}
-			>{$isCartEdit2 ? ($isCartUpdating2 ? 'updating...' : 'update item') : 'add to cart'}</button
+		<button type="submit" name={$isCartEdit ? 'edit' : 'add'} disabled={$isCartUpdate}
+			>{$isCartEdit ? ($isCartUpdate ? 'updating...' : 'update item') : 'add to cart'}</button
 		>
-		{#if $isCartEdit2}
+		{#if $isCartEdit}
 			<button type="submit" name="delete"
 				>{cartItem!.quantity > 1
 					? `remove ALL items (${cartItem?.quantity}) from cart`

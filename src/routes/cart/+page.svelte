@@ -1,36 +1,31 @@
 <script lang="ts">
 	import type { CartItem, Collection } from '$lib/shopify/types';
 	import { onMount } from 'svelte';
-	// import type { CartContext } from '../+layout.svelte';
 	import { addOnsKeys } from '$lib/constants';
 	import { priceFormatter } from '$lib';
 	import { getCollections } from '$lib/shopify';
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
 	import { incrementCartItem } from '$lib/Cart/actions';
-	import { cartTesting2, isCartEdit2, isCartUpdating2 } from '$lib/Cart/context.svelte';
+	import { cart, isCartEdit, isCartUpdate } from '$lib/Cart/context.svelte';
 
-	// const { isCartUpdating } = getContext<CartContext>('cart');
-	// export const isCartEdit2 = writable(false);
 	let collections: Collection[] = $state([]);
 	let collection: Collection | undefined = $state(undefined);
 	let cartItem: CartItem | undefined = $state(undefined);
 	let cartItems: CartItem[] = $derived(
-		$cartTesting2.lines.filter((line) => !addOnsKeys.includes(line.merchandise.title))
+		$cart.lines.filter((line) => !addOnsKeys.includes(line.merchandise.title))
 	);
 
 	const handleCartEdit = (item: CartItem) => {
-		// isCartEdit.update(() => true);
-		isCartEdit2.set(true);
+		isCartEdit.set(true);
 		cartItem = item;
 		collection = collections.find((c) => item.attributes.some((a) => a.value === c.title));
 	};
 
 	const handleIncrement = async (item: CartItem, qty: number) => {
-		// isCartUpdating.update(() => true);
-		isCartUpdating2.set(true);
-		isCartEdit2.set(true);
+		isCartUpdate.set(true);
+		isCartEdit.set(true);
 		const message = await incrementCartItem(item, qty);
-		if (message === 'completed') isCartUpdating2.set(false);
+		if (message === 'completed') isCartUpdate.set(false);
 	};
 
 	onMount(async () => {
@@ -40,7 +35,7 @@
 	const calculateTotalCosts = (item: CartItem) => {
 		const productCosts = Number(item.cost.totalAmount.amount);
 
-		const addOnLines = $cartTesting2.lines.filter((line) =>
+		const addOnLines = $cart.lines.filter((line) =>
 			item.attributes.some((attr) => attr.key === line.merchandise.title)
 		);
 
@@ -75,24 +70,21 @@
 							{/each}
 						</div>
 						<div style="display: flex; gap: 10px;">
-							<button onclick={() => handleIncrement(item, 1)} disabled={$isCartUpdating2}>+</button
-							>
+							<button onclick={() => handleIncrement(item, 1)} disabled={$isCartUpdate}>+</button>
 							<p>{item.quantity}</p>
-							<button onclick={() => handleIncrement(item, -1)} disabled={$isCartUpdating2}
-								>-</button
-							>
+							<button onclick={() => handleIncrement(item, -1)} disabled={$isCartUpdate}>-</button>
 						</div>
 						<div>{calculateTotalCosts(item)}</div>
 					</div>
-					<button onclick={() => handleCartEdit(item)} disabled={$isCartUpdating2}
-						>{$isCartUpdating2 ? 'Cart is updating...' : 'Edit item'}</button
+					<button onclick={() => handleCartEdit(item)} disabled={$isCartUpdate}
+						>{$isCartUpdate ? 'Cart is updating...' : 'Edit item'}</button
 					>
 				</div>
 			{/each}
 		{:else}
 			<p>Your cart is empty</p>
 		{/if}
-		{#if $isCartEdit2 && collection}
+		{#if $isCartEdit && collection}
 			<div class="cart-overlay">
 				<ProductForm {collection} {cartItem} />
 			</div>

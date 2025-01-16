@@ -138,7 +138,6 @@ export type CartItem = {
 
 export type ShopifyCart = {
 	id: string;
-	attributes: Attributes[];
 	checkoutUrl: string;
 	cost: {
 		subtotalAmount: Money;
@@ -185,7 +184,6 @@ export type Attributes = {
 
 export type Cart = Omit<ShopifyCart, 'lines'> & {
 	lines: CartItem[];
-	attributes: Attributes[];
 };
 
 export type ShopifyAddToCartOperation = {

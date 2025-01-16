@@ -3,25 +3,13 @@
 	import type { PageData } from './$types';
 	import '../styles/global.css';
 	import Header from '$lib/Header/Header.svelte';
-	// import type { Cart } from '$lib/shopify/types';
 	import DynamicOverlay from '$lib/DynamicOverlay/DynamicOverlay.svelte';
-	// import { writable, type Writable } from 'svelte/store';
-	import { cartTesting2 } from '$lib/Cart/context.svelte';
 
-	// update this code with $state: https://svelte.dev/docs/svelte/stores
-
-	// export type CartContext = {
-	// 	isCartEdit: Writable<boolean>;
-	// 	isCartUpdating: Writable<boolean>;
-	// };
+	import { cart } from '$lib/Cart/context.svelte';
 
 	let { children, data }: { children: Snippet; data: PageData } = $props();
-	// const cart = writable(data.cart);
-	if (data.cart) cartTesting2.set(data.cart);
-	// const isCartEdit = writable(false);
-	// const isCartUpdating = writable(false);
 
-	// setContext('cart', { isCartUpdating });
+	if (data.cart) cart.set(data.cart);
 </script>
 
 <div>

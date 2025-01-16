@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { isCartEdit2 } from '$lib/Cart/context.svelte';
+	import { isCartEdit } from '$lib/Cart/context.svelte';
 
 	const handleClick = () => {
-		isCartEdit2.set(false);
+		isCartEdit.set(false);
 	};
 </script>
 
 <div
-	class={`overlay ${$isCartEdit2}`}
+	class={`overlay ${$isCartEdit}`}
 	role="button"
 	tabindex="0"
 	onclick={handleClick}
