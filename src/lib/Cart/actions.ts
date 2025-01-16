@@ -62,7 +62,6 @@ export const addProductWithAddOnsToCart = (
 		cost
 	};
 
-	// cart.set(updatedCart);
 	cart.set(updatedCart);
 
 	// const newLines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
@@ -172,7 +171,6 @@ export const pleaseAddItemToCart = async (
 	addOns: Product,
 	collection: Collection
 ) => {
-	// const cartValue = get(cart);
 	const cartValueTesting = get(cart);
 
 	addProductWithAddOnsToCart(selectedProduct, selectedVariant, selectedAddOns, addOns, collection);
@@ -180,7 +178,6 @@ export const pleaseAddItemToCart = async (
 	const newLines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
 
 	const updatedCart = await addItem(cartValueTesting, newLines);
-	// cart.set(updatedCart as Cart);
 	cart.set(updatedCart as Cart);
 	return 'completed';
 };
