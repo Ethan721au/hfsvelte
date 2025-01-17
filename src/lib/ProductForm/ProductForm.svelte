@@ -12,7 +12,7 @@
 		type AddOn,
 		type UpdateType
 	} from '$lib/Cart/actions';
-	import { cart, isCartEdit, isCartUpdate } from '$lib/Cart/context.svelte';
+	import { addItemtoCart, cart, isCartEdit, isCartUpdate } from '$lib/Cart/context.svelte';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -68,14 +68,15 @@
 				if (!selectedProduct) {
 					return 'Please select a product';
 				}
-				message = await pleaseAddItemToCart(
-					selectedProduct,
-					selectedVariant,
-					selectedAddOns,
-					addOns,
-					collection
-				);
-				if (message === 'completed') isCartUpdate.set(false);
+				addItemtoCart(selectedProduct, selectedVariant, selectedAddOns, addOns, collection);
+				// message = await pleaseAddItemToCart(
+				// 	selectedProduct,
+				// 	selectedVariant,
+				// 	selectedAddOns,
+				// 	addOns,
+				// 	collection
+				// );
+				// if (message === 'completed') isCartUpdate.set(false);
 
 				break;
 			case 'delete':

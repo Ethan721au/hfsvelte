@@ -171,13 +171,13 @@ export const pleaseAddItemToCart = async (
 	addOns: Product,
 	collection: Collection
 ) => {
-	const cartValueTesting = get(cart);
+	// const cartValue = get(cart);
 
 	addProductWithAddOnsToCart(selectedProduct, selectedVariant, selectedAddOns, addOns, collection);
 
 	const newLines = prepareCartLines(selectedProduct!, selectedVariant!, selectedAddOns);
 
-	const updatedCart = await addItem(cartValueTesting, newLines);
+	const updatedCart = await addItem(get(cart), newLines);
 	cart.set(updatedCart as Cart);
 	return 'completed';
 };

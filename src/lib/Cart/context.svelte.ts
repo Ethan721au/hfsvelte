@@ -1,8 +1,15 @@
-import { createCart, getCart } from '$lib/shopify';
+import { addToCart, createCart, getCart } from '$lib/shopify';
 import type { Cookies } from '@sveltejs/kit';
-import { writable, type Writable } from 'svelte/store';
+import { get, writable, type Writable } from 'svelte/store';
 import { updateCartTotals } from './actions';
-import type { Cart } from '$lib/shopify/types';
+import type { Attributes, Cart, Collection, Product, ProductVariant } from '$lib/shopify/types';
+
+export type AddOn = {
+	id: string;
+	title: string;
+	checked: boolean;
+	value: FormDataEntryValue;
+};
 
 const emptyCart: Cart = {
 	id: '',
@@ -48,4 +55,54 @@ export async function createCartAndSetCookie(cookies: Cookies) {
 		maxAge: 600 * 60
 	});
 	return cart;
+}
+
+export const addItemtoCart = async (
+	selectedProduct: Product,
+	selectedVariant: ProductVariant | undefined,
+	selectedAddOns: AddOn[],
+	addOn: Product,
+	collection: Collection
+) => {
+	// addItemtoFrontEndCart(selectedProduct, selectedVariant, selectedAddOns, addOns, collection);
+
+	const addOns = selectedAddOns.map((addOn) => {
+		return { merchandiseId: addOn.id, quantity: 1, attributes: [] };
+	});
+
+	const attributes = [
+		{ key: 'Order type', value: collection.title },
+		...selectedAddOns.map((addOn) => {
+			return { key: addOn.title, value: addOn.value };
+		})
+	];
+
+	const product = {
+		merchandiseId: selectedVariant?.id || selectedProduct.variants[0].id,
+		quantity: 1,
+		attributes
+	};
+
+	const updatedCart = await addItemtoShopifyCart(get(cart), [product, ...addOns]);
+
+	cart.set(updatedCart as Cart);
+
+	isCartUpdate.set(false);
+};
+
+export async function addItemtoShopifyCart(
+	cart: Cart,
+	lines: { merchandiseId: string; quantity: number; attributes: Attributes[] }[]
+) {
+	if (!cart.id || !lines) {
+		return 'Error adding item to cart';
+	}
+
+	try {
+		const updatedCart = await addToCart(cart.id, lines);
+		return updatedCart;
+	} catch (error) {
+		console.log(error);
+		return 'Error adding item to cart';
+	}
 }
