@@ -136,6 +136,10 @@ export const addItemtoCart = async (
 	console.log(selectedProduct, 'selectedProduct');
 	// addItemtoFrontEndCart(selectedProduct, selectedVariant, selectedAddOns, addOns, collection);
 
+	const productVariant = selectedVariant || selectedProduct.variants[0];
+
+	console.log(productVariant, 'productVariant');
+
 	const addOns = selectedAddOns.map((addOn) => {
 		return { merchandiseId: addOn.id, quantity: 1, attributes: [] };
 	});
