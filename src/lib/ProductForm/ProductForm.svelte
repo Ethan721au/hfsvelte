@@ -2,14 +2,19 @@
 	import { priceFormatter } from '$lib';
 	import Input from '$lib/Input/Input.svelte';
 	import { getCollectionProducts } from '$lib/shopify';
-	import type { CartItem, Collection, Product, ProductVariant } from '$lib/shopify/types';
+	import type {
+		AddOnVariant,
+		CartItem,
+		Collection,
+		Product,
+		ProductVariant
+	} from '$lib/shopify/types';
 	import { onMount } from 'svelte';
 
 	import {
 		pleaseAddItemToCart,
 		pleaseEditCartItem,
 		pleaseRemovefromCart,
-		type AddOn,
 		type UpdateType
 	} from '$lib/Cart/actions';
 	import { addItemtoCart, cart, isCartEdit, isCartUpdate } from '$lib/Cart/context.svelte';
@@ -23,7 +28,7 @@
 	let collectionProducts: Product[] = $state([]);
 	let selectedProduct: Product | undefined = $state(undefined);
 	let selectedVariant: ProductVariant | undefined = $state(undefined);
-	let selectedAddOns: AddOn[] = $state([]);
+	let selectedAddOns: AddOnVariant[] = $state([]);
 	let products: Product[] = $derived(collectionProducts.filter((p) => p.productType === 'product'));
 	let productsWithVariants: Product[] = $derived(
 		products?.filter((product) => product.variants.length > 1)
@@ -47,11 +52,10 @@
 					cartItem.attributes.some((attribute) => attribute.key === addon.title)
 				);
 
-				selectedAddOns = matchedAddons.map((addon) => ({
-					id: addon.id,
-					title: addon.title,
+				selectedAddOns = matchedAddons.map((addOn) => ({
+					...addOn,
 					checked: true,
-					value: cartItem.attributes.find((attribute) => attribute.key === addon.title)?.value ?? ''
+					value: cartItem.attributes.find((attribute) => attribute.key === addOn.title)?.value ?? ''
 				}));
 			}
 		}
@@ -106,17 +110,16 @@
 		}
 	};
 
-	const handleAddOnChange = (addOnId: string, addOnTitle: string, checked: boolean) => {
-		const existingAddOnIndex = selectedAddOns.findIndex((addOn) => addOn.id === addOnId);
+	const handleAddOnChange = (addOn: AddOnVariant, checked: boolean) => {
+		const existingAddOnIndex = selectedAddOns.findIndex((a) => a.id === addOn.id);
 
 		if (existingAddOnIndex !== -1) {
 			selectedAddOns = selectedAddOns
 				.map((addOn, index) => (index === existingAddOnIndex ? { ...addOn, checked } : addOn))
-				.filter((addOn) => checked || addOn.id !== addOnId);
+				.filter((a) => checked || a.id !== addOn.id);
 		} else if (checked) {
 			selectedAddOns.push({
-				id: addOnId,
-				title: addOnTitle,
+				...addOn,
 				checked,
 				value: ''
 			});
@@ -177,7 +180,7 @@
 							label={`${addOn.title} (+${priceFormatter(addOn?.price.amount, 0)})`}
 							name={addOn.title}
 							checked={selectedAddOns?.find((a) => a.id === addOn.id)?.checked || false}
-							onChange={(checked) => handleAddOnChange(addOn.id, addOn.title, checked as boolean)}
+							onChange={(checked) => handleAddOnChange(addOn, checked as boolean)}
 						/>
 						{#if selectedAddOns.find((a) => a.id === addOn.id)?.checked}
 							<Input

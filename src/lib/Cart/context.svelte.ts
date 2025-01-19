@@ -1,15 +1,25 @@
 import { addToCart, createCart, getCart } from '$lib/shopify';
 import type { Cookies } from '@sveltejs/kit';
 import { get, writable, type Writable } from 'svelte/store';
-import { updateCartTotals } from './actions';
-import type { Attributes, Cart, Collection, Product, ProductVariant } from '$lib/shopify/types';
+// import { updateCartTotals } from './actions';
+import type {
+	AddOnVariant,
+	Attributes,
+	Cart,
+	CartItem,
+	Collection,
+	Product,
+	ProductVariant
+} from '$lib/shopify/types';
+import { addOnsKeys } from '$lib/constants';
 
-export type AddOn = {
-	id: string;
-	title: string;
-	checked: boolean;
-	value: FormDataEntryValue;
-};
+// export type AddOn = {
+// 	addOn: ProductVariant;
+// 	id: string;
+// 	title: string;
+// 	checked: boolean;
+// 	value: FormDataEntryValue;
+// };
 
 const emptyCart: Cart = {
 	id: '',
@@ -57,13 +67,73 @@ export async function createCartAndSetCookie(cookies: Cookies) {
 	return cart;
 }
 
+export function calculateItemCost(quantity: number, price: string): string {
+	return (Number(price) * quantity).toString();
+}
+
+export function updateCartTotals(lines: CartItem[]): Pick<Cart, 'totalQuantity' | 'cost'> {
+	const products = lines.filter((line) => !addOnsKeys.includes(line.merchandise.title));
+
+	const totalQuantity = products.reduce((sum, item) => sum + item.quantity, 0);
+
+	const totalAmount = lines.reduce((sum, item) => sum + Number(item.cost.totalAmount.amount), 0);
+
+	const currencyCode = lines[0]?.cost.totalAmount.currencyCode ?? 'USD';
+
+	return {
+		totalQuantity,
+		cost: {
+			subtotalAmount: { amount: totalAmount.toString(), currencyCode },
+			totalAmount: { amount: totalAmount.toString(), currencyCode },
+			totalTaxAmount: { amount: '0', currencyCode }
+		}
+	};
+}
+
+export function createOrUpdateCartItem(
+	variant: ProductVariant,
+	product: Product,
+	existingItem?: CartItem,
+	attributes?: Attributes[],
+	quantity?: number
+): CartItem {
+	const updatedQuantity = existingItem ? existingItem.quantity + quantity! : 1;
+	const totalAmount = calculateItemCost(updatedQuantity, variant.price.amount);
+
+	return {
+		id: existingItem?.id ?? '',
+		quantity: updatedQuantity,
+		attributes: attributes || [],
+		cost: {
+			totalAmount: {
+				amount: totalAmount,
+				currencyCode: variant.price.currencyCode
+			}
+		},
+		merchandise: {
+			id: variant.id,
+			title: variant.title,
+			selectedOptions: variant.selectedOptions,
+			product: {
+				id: product.id,
+				handle: product.handle,
+				title: product.title,
+				featuredImage: product.featuredImage
+			}
+		}
+	};
+}
+
 export const addItemtoCart = async (
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
-	selectedAddOns: AddOn[],
+	selectedAddOns: AddOnVariant[],
 	addOn: Product,
 	collection: Collection
 ) => {
+	console.log(selectedAddOns, 'selectedAddOns');
+	console.log(selectedVariant, 'selectedVariant');
+	console.log(selectedProduct, 'selectedProduct');
 	// addItemtoFrontEndCart(selectedProduct, selectedVariant, selectedAddOns, addOns, collection);
 
 	const addOns = selectedAddOns.map((addOn) => {
@@ -73,7 +143,7 @@ export const addItemtoCart = async (
 	const attributes = [
 		{ key: 'Order type', value: collection.title },
 		...selectedAddOns.map((addOn) => {
-			return { key: addOn.title, value: addOn.value };
+			return { key: addOn.title, value: addOn.value || '' };
 		})
 	];
 
@@ -83,7 +153,16 @@ export const addItemtoCart = async (
 		attributes
 	};
 
-	const updatedCart = await addItemtoShopifyCart(get(cart), [product, ...addOns]);
+	let updatedCart = await addItemtoShopifyCart(get(cart), [product, ...addOns]);
+
+	if (typeof updatedCart === 'string') {
+		console.error('Failed to update the cart:', updatedCart);
+		return;
+	}
+
+	const { totalQuantity } = updateCartTotals(updatedCart.lines);
+
+	updatedCart = { ...updatedCart, totalQuantity };
 
 	cart.set(updatedCart as Cart);
 
@@ -93,7 +172,7 @@ export const addItemtoCart = async (
 export async function addItemtoShopifyCart(
 	cart: Cart,
 	lines: { merchandiseId: string; quantity: number; attributes: Attributes[] }[]
-) {
+): Promise<Cart | string> {
 	if (!cart.id || !lines) {
 		return 'Error adding item to cart';
 	}

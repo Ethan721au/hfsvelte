@@ -101,7 +101,13 @@ export type ProductVariant = {
 	}[];
 	price: Money;
 	featuredImage?: Image;
+	image?: Image;
 };
+
+export interface AddOnVariant extends ProductVariant {
+	checked?: boolean;
+	value?: FormDataEntryValue;
+}
 
 export type Product = Omit<ShopifyProduct, 'variants' | 'images'> & {
 	variants: ProductVariant[];
