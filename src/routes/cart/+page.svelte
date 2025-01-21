@@ -6,7 +6,7 @@
 	import { getCollections } from '$lib/shopify';
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
 	import { incrementCartItem } from '$lib/Cart/actions';
-	import { cart, isCartEdit, isCartUpdate } from '$lib/Cart/context.svelte';
+	import { cart, isCartEdit, isCartUpdate, removeItemFromCart } from '$lib/Cart/context.svelte';
 
 	let collections: Collection[] = $state([]);
 	let collection: Collection | undefined = $state(undefined);
@@ -72,6 +72,7 @@
 						<div style="display: flex; gap: 10px;">
 							<button onclick={() => handleIncrement(item, 1)} disabled={$isCartUpdate}>+</button>
 							<p>{item.quantity}</p>
+							<!-- <input type="number" value={item.quantity} /> -->
 							<button onclick={() => handleIncrement(item, -1)} disabled={$isCartUpdate}>-</button>
 						</div>
 						<div>{calculateTotalCosts(item)}</div>
@@ -79,6 +80,7 @@
 					<button onclick={() => handleCartEdit(item)} disabled={$isCartUpdate}
 						>{$isCartUpdate ? 'Cart is updating...' : 'Edit item'}</button
 					>
+					<button onclick={() => removeItemFromCart(item)}>Remove item</button>
 				</div>
 			{/each}
 		{:else}

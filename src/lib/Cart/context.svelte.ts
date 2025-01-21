@@ -238,8 +238,26 @@ export async function addItemtoShopifyCart(
 //////// remove item from cart:
 
 export const removeItemFromCart = async (cartItem: CartItem) => {
-	console.log(cartItem, 'cartItem');
-	// const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cartItem);
-	// const updatedCart = await removeFromCart(get(cart), linesIdsToRemove, linesToEdit);
-	// cart.set(updatedCart as Cart);
+	// console.log(cartItem, 'cartItem');
+
+	const addOns = get(cart).lines.filter((line) =>
+		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
+	);
+
+	console.log(addOns, 'productAddOns');
+
+	const updatedLines = addOns.reduce((lines, addOn) => {
+		const newQty = addOn.quantity - 1;
+		if (newQty <= 0) {
+			return lines.filter((line) => line.id !== addOn.id);
+		} else {
+			console.log(addOn, 'addOn');
+			// const updatedAddOn = createOrUpdateCartItem(addOn, addOn.merchandise.product);
+			// return lines.map((item) => (item.id === existingAddOn.id ? updatedAddOn : item));
+		}
+	}, get(cart).lines);
+
+	// addOns.forEach((addOn) => {
+	// 	const newQty = addOn.quantity - 1;
+	// });
 };

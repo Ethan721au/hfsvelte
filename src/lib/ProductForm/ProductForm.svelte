@@ -11,12 +11,7 @@
 	} from '$lib/shopify/types';
 	import { onMount } from 'svelte';
 
-	import {
-		pleaseAddItemToCart,
-		pleaseEditCartItem,
-		pleaseRemovefromCart,
-		type UpdateType
-	} from '$lib/Cart/actions';
+	import { pleaseEditCartItem, pleaseRemovefromCart, type UpdateType } from '$lib/Cart/actions';
 	import {
 		addItemtoCart,
 		cart,
@@ -95,10 +90,10 @@
 
 				break;
 			case 'delete':
-				if (!cartItem || !cart) return 'no item to delete';
+				// if (!cartItem || !cart) return 'no item to delete';
 
-				isCartEdit.set(false);
-				await removeItemFromCart(cartItem);
+				// isCartEdit.set(false);
+				// await removeItemFromCart(cartItem);
 
 				// message = await pleaseRemovefromCart(cartItem);
 
@@ -214,13 +209,13 @@
 		<button type="submit" name={$isCartEdit ? 'edit' : 'add'} disabled={$isCartUpdate}
 			>{$isCartEdit ? ($isCartUpdate ? 'updating...' : 'update item') : 'add to cart'}</button
 		>
-		{#if $isCartEdit}
+		<!-- {#if $isCartEdit}
 			<button type="submit" name="delete"
 				>{cartItem!.quantity > 1
 					? `remove ALL items (${cartItem?.quantity}) from cart`
 					: 'remove item from cart'}</button
 			>
-		{/if}
+		{/if} -->
 	</form>
 	<!-- <a href={cart.checkoutUrl}>Go to checkout</a> -->
 </div>
