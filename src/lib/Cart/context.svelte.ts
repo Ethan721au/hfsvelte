@@ -1,25 +1,16 @@
 import { addToCart, createCart, getCart } from '$lib/shopify';
 import type { Cookies } from '@sveltejs/kit';
 import { get, writable, type Writable } from 'svelte/store';
-// import { updateCartTotals } from './actions';
 import type {
 	AddOnVariant,
 	Attributes,
 	Cart,
 	CartItem,
-	Collection,
 	Product,
 	ProductVariant
 } from '$lib/shopify/types';
 import { addOnsKeys } from '$lib/constants';
-
-// export type AddOn = {
-// 	addOn: ProductVariant;
-// 	id: string;
-// 	title: string;
-// 	checked: boolean;
-// 	value: FormDataEntryValue;
-// };
+import { priceFormatter } from '$lib';
 
 const emptyCart: Cart = {
 	id: '',
@@ -91,18 +82,17 @@ export function updateCartTotals(lines: CartItem[]): Pick<Cart, 'totalQuantity' 
 }
 
 export function createOrUpdateCartItem(
+	existingItem: CartItem | undefined,
 	variant: ProductVariant,
-	product: Product,
-	existingItem?: CartItem,
-	attributes?: Attributes[],
-	quantity?: number
+	product?: Product,
+	attributes?: Attributes[]
 ): CartItem {
-	const updatedQuantity = existingItem ? existingItem.quantity + quantity! : 1;
-	const totalAmount = calculateItemCost(updatedQuantity, variant.price.amount);
+	const quantity = existingItem ? existingItem.quantity + 1 : 1;
+	const totalAmount = calculateItemCost(quantity, variant.price.amount);
 
 	return {
 		id: existingItem?.id ?? '',
-		quantity: updatedQuantity,
+		quantity,
 		attributes: attributes || [],
 		cost: {
 			totalAmount: {
@@ -115,77 +105,141 @@ export function createOrUpdateCartItem(
 			title: variant.title,
 			selectedOptions: variant.selectedOptions,
 			product: {
-				id: product.id,
-				handle: product.handle,
-				title: product.title,
-				featuredImage: product.featuredImage
+				id: product?.id ?? '',
+				handle: product?.handle ?? '',
+				title: product?.title ?? '',
+				featuredImage: product?.featuredImage ?? undefined
 			}
 		}
 	};
 }
 
+const updateAddOns = (selectedAddOns: AddOnVariant[]) => {
+	const addOns = selectedAddOns.map((addOn) => {
+		const existingAddOn = get(cart).lines.find((item) => item.merchandise.id === addOn.id);
+
+		const updatedAddOn = createOrUpdateCartItem(existingAddOn, addOn);
+
+		return {
+			...updatedAddOn,
+			key: addOn.title,
+			value: `${addOn.value} (+${priceFormatter(addOn.price.amount, 0)})`
+		};
+	});
+
+	const updatedLines = addOns.reduce((lines, addOn) => {
+		const existingItem = lines.find((item) => item.merchandise.id === addOn.id);
+
+		return existingItem
+			? lines.map((item) => (item.id === existingItem.id ? addOn : item))
+			: [...lines, addOn];
+	}, get(cart).lines);
+
+	return { addOns, updatedLines };
+};
+
+/////// add item to cart:
+
 export const addItemtoCart = async (
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
-	selectedAddOns: AddOnVariant[],
-	addOn: Product,
-	collection: Collection
+	selectedAddOns: AddOnVariant[]
 ) => {
-	console.log(selectedAddOns, 'selectedAddOns');
-	console.log(selectedVariant, 'selectedVariant');
-	console.log(selectedProduct, 'selectedProduct');
-	// addItemtoFrontEndCart(selectedProduct, selectedVariant, selectedAddOns, addOns, collection);
-
-	const productVariant = selectedVariant || selectedProduct.variants[0];
-
-	console.log(productVariant, 'productVariant');
-
-	const addOns = selectedAddOns.map((addOn) => {
-		return { merchandiseId: addOn.id, quantity: 1, attributes: [] };
-	});
+	const { addOns, updatedLines } = updateAddOns(selectedAddOns);
 
 	const attributes = [
-		{ key: 'Order type', value: collection.title },
-		...selectedAddOns.map((addOn) => {
-			return { key: addOn.title, value: addOn.value || '' };
+		{ key: 'Order type', value: selectedProduct.collections.edges[0].node.title },
+		...addOns.map((addOn) => {
+			return {
+				key: addOn.key,
+				value: addOn.value
+			};
 		})
 	];
 
-	const product = {
-		merchandiseId: selectedVariant?.id || selectedProduct.variants[0].id,
-		quantity: 1,
+	const productVariant = selectedVariant || selectedProduct.variants[0];
+
+	const existingItem = updatedLines.find(
+		(item) =>
+			item.merchandise.id === productVariant.id &&
+			selectedAddOns.every((addOn) =>
+				item.attributes.some((attr) => {
+					if (typeof attr.value === 'string') {
+						const match = attr.value.match(/^(.+?) \(\+\$/);
+						return attr.key === addOn.title && match && match[1] === addOn.value;
+					}
+					return false;
+				})
+			)
+	);
+
+	const updatedItem = createOrUpdateCartItem(
+		existingItem,
+		productVariant,
+		selectedProduct,
 		attributes
+	);
+
+	const lines = existingItem
+		? updatedLines.map((item) => (item.id === existingItem.id ? updatedItem : item))
+		: [...updatedLines, updatedItem];
+
+	const { totalQuantity, cost } = updateCartTotals(lines);
+
+	const updatedCart = {
+		...get(cart),
+		lines,
+		totalQuantity,
+		cost
 	};
 
-	let updatedCart = await addItemtoShopifyCart(get(cart), [product, ...addOns]);
+	cart.set(updatedCart);
 
-	if (typeof updatedCart === 'string') {
-		console.error('Failed to update the cart:', updatedCart);
-		return;
-	}
-
-	const { totalQuantity } = updateCartTotals(updatedCart.lines);
-
-	updatedCart = { ...updatedCart, totalQuantity };
-
-	cart.set(updatedCart as Cart);
-
-	isCartUpdate.set(false);
+	await addItemtoShopifyCart(cart, [
+		{
+			merchandiseId: productVariant.id,
+			quantity: 1,
+			attributes
+		},
+		...addOns.map((addOn) => {
+			return {
+				merchandiseId: addOn.merchandise.id,
+				quantity: 1,
+				attributes: []
+			};
+		})
+	]);
 };
 
 export async function addItemtoShopifyCart(
-	cart: Cart,
+	cart: Writable<Cart>,
 	lines: { merchandiseId: string; quantity: number; attributes: Attributes[] }[]
 ): Promise<Cart | string> {
-	if (!cart.id || !lines) {
+	if (!get(cart).id || !lines) {
 		return 'Error adding item to cart';
 	}
 
 	try {
-		const updatedCart = await addToCart(cart.id, lines);
+		let updatedCart = await addToCart(get(cart).id, lines);
+
+		const { totalQuantity } = updateCartTotals(updatedCart.lines);
+
+		updatedCart = { ...updatedCart, totalQuantity };
+
+		cart.set(updatedCart as Cart);
+
 		return updatedCart;
 	} catch (error) {
 		console.log(error);
 		return 'Error adding item to cart';
 	}
 }
+
+//////// remove item from cart:
+
+export const removeItemFromCart = async (cartItem: CartItem) => {
+	console.log(cartItem, 'cartItem');
+	// const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cartItem);
+	// const updatedCart = await removeFromCart(get(cart), linesIdsToRemove, linesToEdit);
+	// cart.set(updatedCart as Cart);
+};

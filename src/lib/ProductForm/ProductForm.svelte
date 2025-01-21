@@ -17,7 +17,13 @@
 		pleaseRemovefromCart,
 		type UpdateType
 	} from '$lib/Cart/actions';
-	import { addItemtoCart, cart, isCartEdit, isCartUpdate } from '$lib/Cart/context.svelte';
+	import {
+		addItemtoCart,
+		cart,
+		isCartEdit,
+		isCartUpdate,
+		removeItemFromCart
+	} from '$lib/Cart/context.svelte';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -55,7 +61,18 @@
 				selectedAddOns = matchedAddons.map((addOn) => ({
 					...addOn,
 					checked: true,
-					value: cartItem.attributes.find((attribute) => attribute.key === addOn.title)?.value ?? ''
+					value: (() => {
+						const attributeValue = cartItem.attributes.find(
+							(attribute) => attribute.key === addOn.title
+						)?.value;
+
+						if (typeof attributeValue === 'string') {
+							const match = attributeValue.match(/^(.+?) \(\+\$/);
+							return match ? match[1] : '';
+						}
+
+						return '';
+					})()
 				}));
 			}
 		}
@@ -72,22 +89,20 @@
 				if (!selectedProduct) {
 					return 'Please select a product';
 				}
-				addItemtoCart(selectedProduct, selectedVariant, selectedAddOns, addOns, collection);
-				// message = await pleaseAddItemToCart(
-				// 	selectedProduct,
-				// 	selectedVariant,
-				// 	selectedAddOns,
-				// 	addOns,
-				// 	collection
-				// );
-				// if (message === 'completed') isCartUpdate.set(false);
+				await addItemtoCart(selectedProduct, selectedVariant, selectedAddOns);
+
+				isCartUpdate.set(false);
 
 				break;
 			case 'delete':
 				if (!cartItem || !cart) return 'no item to delete';
+
 				isCartEdit.set(false);
-				message = await pleaseRemovefromCart(cartItem);
-				if (message === 'completed') isCartUpdate.set(false);
+				await removeItemFromCart(cartItem);
+
+				// message = await pleaseRemovefromCart(cartItem);
+
+				// if (message === 'completed') isCartUpdate.set(false);
 
 				break;
 			case 'edit':

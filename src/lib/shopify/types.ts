@@ -106,7 +106,7 @@ export type ProductVariant = {
 
 export interface AddOnVariant extends ProductVariant {
 	checked?: boolean;
-	value?: FormDataEntryValue;
+	value?: FormDataEntryValue | string;
 }
 
 export type Product = Omit<ShopifyProduct, 'variants' | 'images'> & {
