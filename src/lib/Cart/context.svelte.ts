@@ -1,4 +1,4 @@
-import { addToCart, createCart, getCart } from '$lib/shopify';
+import { addToCart, createCart, editCartItem, getCart, removeFromCart } from '$lib/shopify';
 import type { Cookies } from '@sveltejs/kit';
 import { get, writable, type Writable } from 'svelte/store';
 import type {
@@ -11,6 +11,15 @@ import type {
 } from '$lib/shopify/types';
 import { addOnsKeys } from '$lib/constants';
 import { priceFormatter } from '$lib';
+
+type Line = {
+	id: string;
+	merchandiseId: string;
+	quantity: number;
+	attributes: { key: string; value: FormDataEntryValue }[];
+};
+
+export type UpdateType = 'plus' | 'minus' | 'delete' | 'edit' | 'add';
 
 const emptyCart: Cart = {
 	id: '',
@@ -138,9 +147,7 @@ const updateAddOns = (selectedAddOns: AddOnVariant[]) => {
 	return { addOns, updatedLines };
 };
 
-/////// add item to cart:
-
-export const addItemtoCart = async (
+const addItemToFrontendCart = (
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOnVariant[]
@@ -195,11 +202,27 @@ export const addItemtoCart = async (
 
 	cart.set(updatedCart);
 
-	await addItemtoShopifyCart(cart, [
+	return { updatedItem, addOns };
+};
+
+/////// add item to cart:
+
+export const addItemtoCart = async (
+	selectedProduct: Product,
+	selectedVariant: ProductVariant | undefined,
+	selectedAddOns: AddOnVariant[]
+) => {
+	const { updatedItem, addOns } = addItemToFrontendCart(
+		selectedProduct,
+		selectedVariant,
+		selectedAddOns
+	);
+
+	const updatedCart = await addItemToShopifyCart(cart, [
 		{
-			merchandiseId: productVariant.id,
+			merchandiseId: updatedItem.merchandise.id,
 			quantity: 1,
-			attributes
+			attributes: updatedItem.attributes
 		},
 		...addOns.map((addOn) => {
 			return {
@@ -209,9 +232,11 @@ export const addItemtoCart = async (
 			};
 		})
 	]);
+
+	cart.set(updatedCart as Cart);
 };
 
-export async function addItemtoShopifyCart(
+export async function addItemToShopifyCart(
 	cart: Writable<Cart>,
 	lines: { merchandiseId: string; quantity: number; attributes: Attributes[] }[]
 ): Promise<Cart | string> {
@@ -226,8 +251,6 @@ export async function addItemtoShopifyCart(
 
 		updatedCart = { ...updatedCart, totalQuantity };
 
-		cart.set(updatedCart as Cart);
-
 		return updatedCart;
 	} catch (error) {
 		console.log(error);
@@ -237,27 +260,150 @@ export async function addItemtoShopifyCart(
 
 //////// remove item from cart:
 
-export const removeItemFromCart = async (cartItem: CartItem) => {
-	// console.log(cartItem, 'cartItem');
-
+export const editCartItemQty = (cartItem: CartItem, qty: number) => {
 	const addOns = get(cart).lines.filter((line) =>
 		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
 	);
 
-	console.log(addOns, 'productAddOns');
+	const testing = [...addOns, cartItem];
 
-	const updatedLines = addOns.reduce((lines, addOn) => {
-		const newQty = addOn.quantity - 1;
+	const itemsToRemove: string[] = [];
+
+	const itemsToEdit: Line[] = [];
+
+	const lines = testing.reduce((lines, addOn) => {
+		const newQty = addOn.quantity - qty;
 		if (newQty <= 0) {
+			itemsToRemove.push(addOn.id);
 			return lines.filter((line) => line.id !== addOn.id);
 		} else {
-			console.log(addOn, 'addOn');
-			// const updatedAddOn = createOrUpdateCartItem(addOn, addOn.merchandise.product);
-			// return lines.map((item) => (item.id === existingAddOn.id ? updatedAddOn : item));
+			itemsToEdit.push({
+				id: addOn.id!,
+				merchandiseId: addOn.merchandise.id,
+				quantity: newQty,
+				attributes: addOn.attributes
+			});
+
+			const updatedAddOn = {
+				...addOn,
+				quantity: newQty,
+				cost: {
+					totalAmount: {
+						amount: calculateItemCost(
+							newQty,
+							(Number(addOn.cost.totalAmount.amount) / addOn.quantity).toString()
+						),
+						currencyCode: addOn.cost.totalAmount.currencyCode
+					}
+				}
+			};
+
+			return lines.map((item) => (item.id === addOn.id ? updatedAddOn : item));
 		}
 	}, get(cart).lines);
 
-	// addOns.forEach((addOn) => {
-	// 	const newQty = addOn.quantity - 1;
-	// });
+	const { totalQuantity, cost } = updateCartTotals(lines);
+
+	const updatedCart = {
+		...get(cart),
+		lines,
+		totalQuantity,
+		cost
+	};
+
+	cart.set(updatedCart);
+
+	return { itemsToRemove, itemsToEdit };
+};
+
+export const removeItemFromCart = async (cartItem: CartItem, qty: number) => {
+	const { itemsToRemove, itemsToEdit } = editCartItemQty(cartItem, qty);
+
+	let updatedCart = get(cart);
+
+	updatedCart = (await removeItemFromShopifyCart(cart, itemsToRemove)) as Cart;
+	updatedCart = (await editCartItemInShopifyCart(cart, itemsToEdit)) as Cart;
+	cart.set(updatedCart as Cart);
+};
+
+export async function removeItemFromShopifyCart(
+	cart: Writable<Cart>,
+	lineIds: string[]
+): Promise<Cart | string> {
+	if (!get(cart).id || !lineIds) {
+		return 'Error removing item from cart';
+	}
+
+	try {
+		let updatedCart = await removeFromCart(get(cart).id, lineIds);
+
+		const { totalQuantity } = updateCartTotals(updatedCart.lines);
+
+		updatedCart = { ...updatedCart, totalQuantity };
+
+		return updatedCart;
+	} catch (error) {
+		console.log(error);
+		return 'Error removing item from cart';
+	}
+}
+
+export async function editCartItemInShopifyCart(
+	cart: Writable<Cart>,
+	lines: { id: string; merchandiseId: string; quantity: number; attributes: Attributes[] }[]
+): Promise<Cart | string> {
+	if (!get(cart).id || !lines) {
+		return 'Error editing item in cart';
+	}
+
+	try {
+		let updatedCart = await editCartItem(get(cart).id, lines);
+
+		const { totalQuantity } = updateCartTotals(updatedCart.lines);
+
+		updatedCart = { ...updatedCart, totalQuantity };
+
+		return updatedCart;
+	} catch (error) {
+		console.log(error);
+		return 'Error editing item in cart';
+	}
+}
+
+//////// edit item in cart:
+
+export const editItemInCart = async (
+	selectedProduct: Product,
+	selectedVariant: ProductVariant | undefined,
+	selectedAddOns: AddOnVariant[],
+	cartItem: CartItem
+) => {
+	const { itemsToRemove, itemsToEdit } = editCartItemQty(cartItem, cartItem.quantity);
+
+	const { updatedItem, addOns } = addItemToFrontendCart(
+		selectedProduct,
+		selectedVariant,
+		selectedAddOns
+	);
+
+	let updatedCart = get(cart);
+
+	updatedCart = (await removeItemFromShopifyCart(cart, itemsToRemove)) as Cart;
+	updatedCart = (await editCartItemInShopifyCart(cart, itemsToEdit)) as Cart;
+	updatedCart = (await addItemToShopifyCart(cart, [
+		{
+			merchandiseId: updatedItem.merchandise.id,
+			quantity: 1,
+			attributes: updatedItem.attributes
+		},
+		...addOns.map((addOn) => {
+			return {
+				merchandiseId: addOn.merchandise.id,
+				quantity: 1,
+				attributes: []
+			};
+		})
+	])) as Cart;
+
+	cart.set(updatedCart);
 };

@@ -23,9 +23,8 @@
 
 	const handleIncrement = async (item: CartItem, qty: number) => {
 		isCartUpdate.set(true);
-		isCartEdit.set(true);
-		const message = await incrementCartItem(item, qty);
-		if (message === 'completed') isCartUpdate.set(false);
+		await removeItemFromCart(item, -1);
+		isCartUpdate.set(false);
 	};
 
 	onMount(async () => {
@@ -80,7 +79,9 @@
 					<button onclick={() => handleCartEdit(item)} disabled={$isCartUpdate}
 						>{$isCartUpdate ? 'Cart is updating...' : 'Edit item'}</button
 					>
-					<button onclick={() => removeItemFromCart(item)}>Remove item</button>
+					<button onclick={() => removeItemFromCart(item, item.quantity)} disabled={$isCartUpdate}
+						>{$isCartUpdate ? 'Cart is updating...' : 'Remove item'}</button
+					>
 				</div>
 			{/each}
 		{:else}

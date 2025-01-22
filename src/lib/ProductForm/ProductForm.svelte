@@ -10,15 +10,15 @@
 		ProductVariant
 	} from '$lib/shopify/types';
 	import { onMount } from 'svelte';
-
-	import { pleaseEditCartItem, pleaseRemovefromCart, type UpdateType } from '$lib/Cart/actions';
 	import {
 		addItemtoCart,
 		cart,
+		editItemInCart,
 		isCartEdit,
 		isCartUpdate,
-		removeItemFromCart
+		type UpdateType
 	} from '$lib/Cart/context.svelte';
+	import { testaddItemToCart } from '$lib/Cart/final.svelte';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -84,37 +84,24 @@
 				if (!selectedProduct) {
 					return 'Please select a product';
 				}
-				await addItemtoCart(selectedProduct, selectedVariant, selectedAddOns);
+				// await addItemtoCart(selectedProduct, selectedVariant, selectedAddOns);
+
+				await testaddItemToCart(selectedProduct, selectedVariant, selectedAddOns);
 
 				isCartUpdate.set(false);
 
 				break;
-			case 'delete':
-				// if (!cartItem || !cart) return 'no item to delete';
 
-				// isCartEdit.set(false);
-				// await removeItemFromCart(cartItem);
-
-				// message = await pleaseRemovefromCart(cartItem);
-
-				// if (message === 'completed') isCartUpdate.set(false);
-
-				break;
 			case 'edit':
 				if (!selectedProduct) {
 					return 'Please select a product';
 				}
-				if (!cart || !cartItem) return 'no item to delete';
+				if (!cart || !cartItem) return 'no item to edit';
 				isCartEdit.set(false);
-				message = await pleaseEditCartItem(
-					selectedProduct,
-					selectedVariant,
-					selectedAddOns,
-					addOns,
-					cartItem,
-					collection
-				);
-				if (message === 'completed') isCartUpdate.set(false);
+
+				await editItemInCart(selectedProduct, selectedVariant, selectedAddOns, cartItem);
+
+				isCartUpdate.set(false);
 
 				break;
 		}
@@ -209,13 +196,6 @@
 		<button type="submit" name={$isCartEdit ? 'edit' : 'add'} disabled={$isCartUpdate}
 			>{$isCartEdit ? ($isCartUpdate ? 'updating...' : 'update item') : 'add to cart'}</button
 		>
-		<!-- {#if $isCartEdit}
-			<button type="submit" name="delete"
-				>{cartItem!.quantity > 1
-					? `remove ALL items (${cartItem?.quantity}) from cart`
-					: 'remove item from cart'}</button
-			>
-		{/if} -->
 	</form>
 	<!-- <a href={cart.checkoutUrl}>Go to checkout</a> -->
 </div>

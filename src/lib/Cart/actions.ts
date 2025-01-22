@@ -187,11 +187,6 @@ export const pleaseRemovefromCart = async (cartItem: CartItem) => {
 
 	const { linesIdsToRemove, linesToEdit } = deleteItemFromCart(cartItem);
 
-	// await Promise.all([
-	// 	removeFromCart(cartValue.id, linesIdsToRemove),
-	// 	editCartItem(cartValue.id, linesToEdit)
-	// ]);
-
 	await removeFromCart(cartValue.id, linesIdsToRemove);
 	await editCartItem(cartValue.id, linesToEdit);
 	return 'completed';
@@ -221,14 +216,6 @@ export const pleaseEditCartItem = async (
 	await editCartItem(cartValue.id, linesToEdit);
 	await addItem(cartValue, newLines);
 	return 'completed';
-
-	// await Promise.all([
-	// 	removeFromCart(cartValue.id, linesIdsToRemove),
-	// 	editCartItem(cartValue.id, linesToEdit),
-	// 	addItem(cartValue, newLines)
-	// ]);
-
-	// return 'completed';
 };
 
 export const incrementCartItem = async (cartItem: CartItem, qty: number) => {
