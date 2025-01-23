@@ -7,7 +7,6 @@ import type {
 	ProductVariant
 } from '$lib/shopify/types';
 import { get, writable, type Writable } from 'svelte/store';
-// import { cart } from './context.svelte';
 import { priceFormatter } from '$lib';
 import { addToCart, createCart, editCartItem, getCart, removeFromCart } from '$lib/shopify';
 import { addOnsKeys } from '$lib/constants';
@@ -191,7 +190,7 @@ export const editCartItemQty = (cartItem: CartItem, qty: number) => {
 	}
 };
 
-export const testaddItemToCart = async (
+export const addItemToCart = async (
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOnVariant[]

@@ -10,9 +10,8 @@
 		ProductVariant
 	} from '$lib/shopify/types';
 	import { onMount } from 'svelte';
-	// import { addItemtoCart, editItemInCart, type UpdateType } from '$lib/Cart/context.svelte';
 	import {
-		testaddItemToCart,
+		addItemToCart,
 		cart,
 		isCartEdit,
 		isCartUpdate,
@@ -83,9 +82,8 @@
 				if (!selectedProduct) {
 					return 'Please select a product';
 				}
-				// await addItemtoCart(selectedProduct, selectedVariant, selectedAddOns);
 
-				await testaddItemToCart(selectedProduct, selectedVariant, selectedAddOns);
+				await addItemToCart(selectedProduct, selectedVariant, selectedAddOns);
 
 				isCartUpdate.set(false);
 

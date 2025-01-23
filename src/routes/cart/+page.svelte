@@ -5,8 +5,6 @@
 	import { priceFormatter } from '$lib';
 	import { getCollections } from '$lib/shopify';
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
-	// import { incrementCartItem } from '$lib/Cart/actions';
-	// import { isCartEdit, isCartUpdate } from '$lib/Cart/context.svelte';
 	import { editItemFromCart, cart, isCartEdit, isCartUpdate } from '$lib/Cart/final.svelte';
 
 	let collections: Collection[] = $state([]);
