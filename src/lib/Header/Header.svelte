@@ -1,10 +1,6 @@
 <script lang="ts">
-	import { cart } from '$lib/Cart/context.svelte';
-	// import type { CartContext } from '../../routes/+layout.svelte';
+	import { cart } from '$lib/Cart/final.svelte';
 	import './header.css';
-	// import { getContext } from 'svelte';
-	// const { cart } = getContext<CartContext>('cart');
-	// console.log($cart, 'cartFromHeader');
 	console.log($cart, 'headerCart');
 </script>
 
@@ -22,7 +18,6 @@
 	</a>
 	<a href="/cart" class="cart-icon-wrapper">
 		<img src="/cartIcon.svg" alt="Cart" />
-		<!-- <div class="count-bubble">{cart?.totalQuantity}</div> -->
 		<div class="count-bubble">{$cart.totalQuantity}</div>
 	</a>
 </div>

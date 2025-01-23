@@ -10,15 +10,14 @@
 		ProductVariant
 	} from '$lib/shopify/types';
 	import { onMount } from 'svelte';
+	// import { addItemtoCart, editItemInCart, type UpdateType } from '$lib/Cart/context.svelte';
 	import {
-		addItemtoCart,
+		testaddItemToCart,
 		cart,
-		editItemInCart,
 		isCartEdit,
 		isCartUpdate,
 		type UpdateType
-	} from '$lib/Cart/context.svelte';
-	import { testaddItemToCart } from '$lib/Cart/final.svelte';
+	} from '$lib/Cart/final.svelte';
 
 	type ProductFormProps = {
 		collection: Collection;
@@ -99,7 +98,7 @@
 				if (!cart || !cartItem) return 'no item to edit';
 				isCartEdit.set(false);
 
-				await editItemInCart(selectedProduct, selectedVariant, selectedAddOns, cartItem);
+				// await editItemInCart(selectedProduct, selectedVariant, selectedAddOns, cartItem);
 
 				isCartUpdate.set(false);
 

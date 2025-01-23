@@ -5,9 +5,9 @@
 	import { priceFormatter } from '$lib';
 	import { getCollections } from '$lib/shopify';
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
-	import { incrementCartItem } from '$lib/Cart/actions';
-	import { cart, isCartEdit, isCartUpdate, removeItemFromCart } from '$lib/Cart/context.svelte';
-	import { removeItemFromCartTest } from '$lib/Cart/final.svelte';
+	// import { incrementCartItem } from '$lib/Cart/actions';
+	// import { isCartEdit, isCartUpdate } from '$lib/Cart/context.svelte';
+	import { editItemFromCart, cart, isCartEdit, isCartUpdate } from '$lib/Cart/final.svelte';
 
 	let collections: Collection[] = $state([]);
 	let collection: Collection | undefined = $state(undefined);
@@ -16,15 +16,15 @@
 		$cart.lines.filter((line) => !addOnsKeys.includes(line.merchandise.title))
 	);
 
-	const handleCartEdit = (item: CartItem) => {
+	const handleEditCartItem = (item: CartItem) => {
 		isCartEdit.set(true);
 		cartItem = item;
 		collection = collections.find((c) => item.attributes.some((a) => a.value === c.title));
 	};
 
-	const handleIncrement = async (item: CartItem, qty: number) => {
+	const handleCartItemQty = async (item: CartItem, qty: number) => {
 		isCartUpdate.set(true);
-		await removeItemFromCart(item, -1);
+		await editItemFromCart(item, qty);
 		isCartUpdate.set(false);
 	};
 
@@ -70,19 +70,19 @@
 							{/each}
 						</div>
 						<div style="display: flex; gap: 10px;">
-							<button onclick={() => handleIncrement(item, 1)} disabled={$isCartUpdate}>+</button>
+							<button onclick={() => handleCartItemQty(item, 1)} disabled={$isCartUpdate}>+</button>
 							<p>{item.quantity}</p>
 							<!-- <input type="number" value={item.quantity} /> -->
-							<button onclick={() => handleIncrement(item, -1)} disabled={$isCartUpdate}>-</button>
+							<button onclick={() => handleCartItemQty(item, -1)} disabled={$isCartUpdate}>-</button
+							>
 						</div>
 						<div>{calculateTotalCosts(item)}</div>
 					</div>
-					<button onclick={() => handleCartEdit(item)} disabled={$isCartUpdate}
+					<button onclick={() => handleEditCartItem(item)} disabled={$isCartUpdate}
 						>{$isCartUpdate ? 'Cart is updating...' : 'Edit item'}</button
 					>
-					<button
-						onclick={() => removeItemFromCartTest(item, item.quantity)}
-						disabled={$isCartUpdate}>{$isCartUpdate ? 'Cart is updating...' : 'Remove item'}</button
+					<button onclick={() => handleCartItemQty(item, -item.quantity)} disabled={$isCartUpdate}
+						>{$isCartUpdate ? 'Cart is updating...' : 'Remove item'}</button
 					>
 				</div>
 			{/each}

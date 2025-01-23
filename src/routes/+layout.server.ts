@@ -1,4 +1,4 @@
-import { fetchOrCreateCart } from '$lib/Cart/context.svelte';
+import { fetchOrCreateCart } from '$lib/Cart/final.svelte';
 
 import type { LayoutServerLoad } from './$types';
 

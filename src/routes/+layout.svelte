@@ -5,7 +5,7 @@
 	import Header from '$lib/Header/Header.svelte';
 	import DynamicOverlay from '$lib/DynamicOverlay/DynamicOverlay.svelte';
 
-	import { cart } from '$lib/Cart/context.svelte';
+	import { cart } from '$lib/Cart/final.svelte';
 
 	let { children, data }: { children: Snippet; data: PageData } = $props();
 

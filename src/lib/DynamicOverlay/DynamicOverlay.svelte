@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { isCartEdit } from '$lib/Cart/context.svelte';
+	import { isCartEdit } from '$lib/Cart/final.svelte';
 
 	const handleClick = () => {
 		isCartEdit.set(false);
