@@ -102,6 +102,11 @@ export type ProductVariant = {
 	price: Money;
 	featuredImage?: Image;
 	image?: Image;
+	quantityAvailable?: number;
+	checked?: boolean;
+	value?: FormDataEntryValue | string;
+	attributes: Attributes[];
+	product?: CartProduct;
 };
 
 export interface AddOnVariant extends ProductVariant {
@@ -118,7 +123,7 @@ export type CartProduct = {
 	id: string;
 	handle: string;
 	title: string;
-	featuredImage: Image;
+	featuredImage?: Image;
 	productType?: string;
 	collections?: Connection<ShopifyCollection>;
 	variants?: Connection<ProductVariant>;
@@ -138,7 +143,7 @@ export type CartItem = {
 			name: string;
 			value: string;
 		}[];
-		product: CartProduct;
+		product?: CartProduct;
 	};
 };
 

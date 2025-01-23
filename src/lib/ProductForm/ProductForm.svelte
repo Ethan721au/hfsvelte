@@ -44,7 +44,7 @@
 		if ($cart && $isCartEdit && cartItem) {
 			selectedProduct = cartItem.merchandise.product;
 
-			selectedVariant = cartItem.merchandise.product.variants?.edges.find(
+			selectedVariant = cartItem.merchandise.product?.variants?.edges.find(
 				(v) => v.node.title === cartItem.merchandise.selectedOptions[0].value
 			)?.node;
 

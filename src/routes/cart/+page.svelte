@@ -7,6 +7,7 @@
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
 	import { incrementCartItem } from '$lib/Cart/actions';
 	import { cart, isCartEdit, isCartUpdate, removeItemFromCart } from '$lib/Cart/context.svelte';
+	import { removeItemFromCartTest } from '$lib/Cart/final.svelte';
 
 	let collections: Collection[] = $state([]);
 	let collection: Collection | undefined = $state(undefined);
@@ -60,7 +61,7 @@
 				<div class="product-section">
 					<div class="product-details">
 						<div>
-							<strong>{item.merchandise.product.title}</strong>
+							<strong>{item?.merchandise?.product?.title}</strong>
 							<p>
 								{item.merchandise.title === 'Default Title' ? '' : item.merchandise.title}
 							</p>
@@ -79,8 +80,9 @@
 					<button onclick={() => handleCartEdit(item)} disabled={$isCartUpdate}
 						>{$isCartUpdate ? 'Cart is updating...' : 'Edit item'}</button
 					>
-					<button onclick={() => removeItemFromCart(item, item.quantity)} disabled={$isCartUpdate}
-						>{$isCartUpdate ? 'Cart is updating...' : 'Remove item'}</button
+					<button
+						onclick={() => removeItemFromCartTest(item, item.quantity)}
+						disabled={$isCartUpdate}>{$isCartUpdate ? 'Cart is updating...' : 'Remove item'}</button
 					>
 				</div>
 			{/each}
