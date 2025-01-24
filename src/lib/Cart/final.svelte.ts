@@ -29,6 +29,8 @@ const emptyCart: Cart = {
 export const cart: Writable<Cart> = writable(emptyCart);
 export const isCartEdit = writable(false);
 export const isCartUpdate = writable(false);
+// let newItems2 = $state([]);
+// let editItems2 = $state([]);
 
 // type Line = {
 // 	id: string;
@@ -136,6 +138,8 @@ export function createNewItem(variant: ProductVariant) {
 	};
 }
 
+//// update the code below so new Qty is actually passed as a parameter and not defined in the function
+
 export const editCartItemQty = (cartItem: CartItem, qty: number) => {
 	const newQty = cartItem.quantity + qty;
 
@@ -190,7 +194,7 @@ export const editCartItemQty = (cartItem: CartItem, qty: number) => {
 	}
 };
 
-export const addItemToCart = async (
+export const createOrEditItem = (
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOnVariant[]
@@ -245,6 +249,20 @@ export const addItemToCart = async (
 			newItems.push(newItem);
 		}
 	});
+
+	return { newItems, editItems };
+};
+
+export const addItemToCart = async (
+	selectedProduct: Product,
+	selectedVariant: ProductVariant | undefined,
+	selectedAddOns: AddOnVariant[]
+) => {
+	const { newItems, editItems } = createOrEditItem(
+		selectedProduct,
+		selectedVariant,
+		selectedAddOns
+	);
 
 	let updatedCart = get(cart);
 
@@ -354,4 +372,8 @@ export const testingEditItem = async (
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOnVariant[],
 	cartItem: CartItem
-) => {};
+) => {
+	// const { itemsToRemove, editItems } = await updateCartItemQty(cartItem, -cartItem.quantity);
+	// console.log(itemsToRemove, 'itemsToRemove');
+	// console.log(editItems, 'editItems');
+};
