@@ -15,6 +15,7 @@
 		cart,
 		isCartEdit,
 		isCartUpdate,
+		testingEditItem,
 		type UpdateType
 	} from '$lib/Cart/final.svelte';
 
@@ -96,7 +97,7 @@
 				if (!cart || !cartItem) return 'no item to edit';
 				isCartEdit.set(false);
 
-				// await editItemInCart(selectedProduct, selectedVariant, selectedAddOns, cartItem);
+				await testingEditItem(selectedProduct, selectedVariant, selectedAddOns, cartItem);
 
 				isCartUpdate.set(false);
 

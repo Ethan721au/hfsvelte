@@ -254,7 +254,7 @@ export const addItemToCart = async (
 	cart.set(updatedCart as Cart);
 };
 
-export const editItemFromCart = async (cartItem: CartItem, qty: number) => {
+export const updateCartItemQty = async (cartItem: CartItem, qty: number) => {
 	const itemsToRemove = [];
 
 	const editItems = [];
@@ -348,3 +348,10 @@ export async function removeItemFromShopifyCart(
 		return 'Error removing item from cart';
 	}
 }
+
+export const testingEditItem = async (
+	selectedProduct: Product,
+	selectedVariant: ProductVariant | undefined,
+	selectedAddOns: AddOnVariant[],
+	cartItem: CartItem
+) => {};

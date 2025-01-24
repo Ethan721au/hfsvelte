@@ -5,7 +5,7 @@
 	import { priceFormatter } from '$lib';
 	import { getCollections } from '$lib/shopify';
 	import ProductForm from '$lib/ProductForm/ProductForm.svelte';
-	import { editItemFromCart, cart, isCartEdit, isCartUpdate } from '$lib/Cart/final.svelte';
+	import { updateCartItemQty, cart, isCartEdit, isCartUpdate } from '$lib/Cart/final.svelte';
 
 	let collections: Collection[] = $state([]);
 	let collection: Collection | undefined = $state(undefined);
@@ -22,7 +22,7 @@
 
 	const handleCartItemQty = async (item: CartItem, qty: number) => {
 		isCartUpdate.set(true);
-		await editItemFromCart(item, qty);
+		await updateCartItemQty(item, qty);
 		isCartUpdate.set(false);
 	};
 
