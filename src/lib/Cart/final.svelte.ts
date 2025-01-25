@@ -30,12 +30,15 @@ export const cart: Writable<Cart> = writable(emptyCart);
 export const isCartEdit = writable(false);
 export const isCartUpdate = writable(false);
 
-// type Line = {
-// 	id: string;
-// 	merchandiseId: string;
-// 	quantity: number;
-// 	attributes: { key: string; value: FormDataEntryValue }[];
-// };
+type NewItem = {
+	merchandiseId: string;
+	quantity: number;
+	attributes: Attributes[];
+};
+
+interface CartItemUpdate extends NewItem {
+	id: string;
+}
 
 export const fetchOrCreateCart = async (cookies: Cookies) => {
 	const cartId = cookies.get('cartId');
@@ -90,8 +93,7 @@ export function updateCartTotals(lines: CartItem[]): Pick<Cart, 'totalQuantity' 
 	};
 }
 
-export function createNewItem(variant: ProductVariant) {
-	const quantity = 1;
+export function createNewItem(variant: ProductVariant, quantity: number) {
 	const totalAmount = calculateItemCost(quantity, variant.price.amount);
 	const newItem = {
 		id: '',
@@ -193,8 +195,8 @@ export const createOrEditItem = (
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOnVariant[]
 ) => {
-	const newItems = [];
-	const editItems = [];
+	const newItems: NewItem[] = [];
+	const editItems: CartItemUpdate[] = [];
 
 	const updatedAddOns = selectedAddOns.map((addOn) => {
 		return {
@@ -212,8 +214,24 @@ export const createOrEditItem = (
 	];
 
 	const productVariant = selectedVariant
-		? { ...selectedVariant, product: selectedProduct }
-		: { ...selectedProduct.variants[0], product: selectedProduct };
+		? {
+				...selectedVariant,
+				product: {
+					...selectedProduct,
+					variants: {
+						edges: selectedProduct.variants.map((variant) => ({ node: variant }))
+					}
+				}
+			}
+		: {
+				...selectedProduct.variants[0],
+				product: {
+					...selectedProduct,
+					variants: {
+						edges: selectedProduct.variants.map((variant) => ({ node: variant }))
+					}
+				}
+			};
 
 	const cartItemsToCreate = [...updatedAddOns, { ...productVariant, attributes }];
 
@@ -234,12 +252,12 @@ export const createOrEditItem = (
 		if (existingItem) {
 			const editedItem = editCartItemQty(existingItem, existingItem.quantity + 1);
 			if (editedItem.status === 'updated') {
-				editItems.push(editedItem.value);
+				editItems.push(editedItem.value as CartItemUpdate);
 			} else {
 				console.log('error');
 			}
 		} else {
-			const newItem = createNewItem(product);
+			const newItem = createNewItem(product, 1);
 			newItems.push(newItem);
 		}
 	});
@@ -267,9 +285,9 @@ export const addItemToCart = async (
 };
 
 export const removeOrEditItem = (cartItem: CartItem, qty: number) => {
-	const itemsToRemove = [];
+	const itemsToRemove: string[] = [];
 
-	const itemToReduce = [];
+	const itemToReduce: CartItemUpdate[] = [];
 
 	const addOns = get(cart).lines.filter((line) =>
 		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
@@ -280,9 +298,9 @@ export const removeOrEditItem = (cartItem: CartItem, qty: number) => {
 	cartItems.forEach((product) => {
 		const editedItem = editCartItemQty(product, product.quantity + qty);
 		if (editedItem.status === 'updated') {
-			itemToReduce.push(editedItem.value);
+			itemToReduce.push(editedItem.value as CartItemUpdate);
 		} else if (editedItem.status === 'removed') {
-			itemsToRemove.push(editedItem.value);
+			itemsToRemove.push(editedItem.value as string);
 		} else {
 			console.log('error');
 		}
@@ -367,7 +385,7 @@ export async function removeItemFromShopifyCart(
 	}
 }
 
-export const testingEditItem = async (
+export const editItemFromCart = async (
 	selectedProduct: Product,
 	selectedVariant: ProductVariant | undefined,
 	selectedAddOns: AddOnVariant[],
