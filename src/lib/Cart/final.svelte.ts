@@ -29,8 +29,6 @@ const emptyCart: Cart = {
 export const cart: Writable<Cart> = writable(emptyCart);
 export const isCartEdit = writable(false);
 export const isCartUpdate = writable(false);
-// let newItems2 = $state([]);
-// let editItems2 = $state([]);
 
 // type Line = {
 // 	id: string;
@@ -138,11 +136,7 @@ export function createNewItem(variant: ProductVariant) {
 	};
 }
 
-//// update the code below so new Qty is actually passed as a parameter and not defined in the function
-
-export const editCartItemQty = (cartItem: CartItem, qty: number) => {
-	const newQty = cartItem.quantity + qty;
-
+export const editCartItemQty = (cartItem: CartItem, quantity: number) => {
 	let lines = get(cart).lines;
 
 	const updateCart = (lines: CartItem[]) => {
@@ -158,7 +152,7 @@ export const editCartItemQty = (cartItem: CartItem, qty: number) => {
 		cart.set(updatedCart);
 	};
 
-	if (newQty <= 0) {
+	if (quantity <= 0) {
 		lines = lines.filter((line) => line.id !== cartItem.id);
 		updateCart(lines);
 		return {
@@ -168,11 +162,11 @@ export const editCartItemQty = (cartItem: CartItem, qty: number) => {
 	} else {
 		const updatedItem = {
 			...cartItem,
-			quantity: newQty,
+			quantity,
 			cost: {
 				totalAmount: {
 					amount: calculateItemCost(
-						newQty,
+						quantity,
 						(Number(cartItem.cost.totalAmount.amount) / cartItem.quantity).toString()
 					),
 					currencyCode: cartItem.cost.totalAmount.currencyCode
@@ -238,7 +232,7 @@ export const createOrEditItem = (
 		});
 
 		if (existingItem) {
-			const editedItem = editCartItemQty(existingItem, 1);
+			const editedItem = editCartItemQty(existingItem, existingItem.quantity + 1);
 			if (editedItem.status === 'updated') {
 				editItems.push(editedItem.value);
 			} else {
@@ -272,10 +266,10 @@ export const addItemToCart = async (
 	cart.set(updatedCart as Cart);
 };
 
-export const updateCartItemQty = async (cartItem: CartItem, qty: number) => {
+export const removeOrEditItem = (cartItem: CartItem, qty: number) => {
 	const itemsToRemove = [];
 
-	const editItems = [];
+	const itemToReduce = [];
 
 	const addOns = get(cart).lines.filter((line) =>
 		cartItem.attributes.some((attr) => attr.key === line.merchandise.title)
@@ -284,9 +278,9 @@ export const updateCartItemQty = async (cartItem: CartItem, qty: number) => {
 	const cartItems = [cartItem, ...addOns];
 
 	cartItems.forEach((product) => {
-		const editedItem = editCartItemQty(product, qty);
+		const editedItem = editCartItemQty(product, product.quantity + qty);
 		if (editedItem.status === 'updated') {
-			editItems.push(editedItem.value);
+			itemToReduce.push(editedItem.value);
 		} else if (editedItem.status === 'removed') {
 			itemsToRemove.push(editedItem.value);
 		} else {
@@ -294,10 +288,16 @@ export const updateCartItemQty = async (cartItem: CartItem, qty: number) => {
 		}
 	});
 
+	return { itemsToRemove, itemToReduce };
+};
+
+export const updateCartItemQty = async (cartItem: CartItem, qty: number) => {
+	const { itemsToRemove, itemToReduce } = removeOrEditItem(cartItem, qty);
+
 	let updatedCart = get(cart);
 
 	updatedCart = (await removeItemFromShopifyCart(cart, itemsToRemove)) as Cart;
-	updatedCart = (await editCartItemInShopifyCart(cart, editItems)) as Cart;
+	updatedCart = (await editCartItemInShopifyCart(cart, itemToReduce)) as Cart;
 	cart.set(updatedCart as Cart);
 };
 
@@ -373,7 +373,19 @@ export const testingEditItem = async (
 	selectedAddOns: AddOnVariant[],
 	cartItem: CartItem
 ) => {
-	// const { itemsToRemove, editItems } = await updateCartItemQty(cartItem, -cartItem.quantity);
-	// console.log(itemsToRemove, 'itemsToRemove');
-	// console.log(editItems, 'editItems');
+	const { itemsToRemove, itemToReduce } = removeOrEditItem(cartItem, -cartItem.quantity);
+	const { newItems, editItems } = createOrEditItem(
+		selectedProduct,
+		selectedVariant,
+		selectedAddOns
+	);
+
+	let updatedCart = get(cart);
+
+	updatedCart = (await removeItemFromShopifyCart(cart, itemsToRemove)) as Cart;
+	updatedCart = (await editCartItemInShopifyCart(cart, itemToReduce)) as Cart;
+	updatedCart = (await editCartItemInShopifyCart(cart, editItems)) as Cart;
+	updatedCart = (await addItemToShopifyCart(cart, newItems)) as Cart;
+
+	cart.set(updatedCart as Cart);
 };
