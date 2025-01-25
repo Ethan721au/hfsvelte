@@ -76,12 +76,14 @@
 						</div>
 						<div>{calculateTotalCosts(item)}</div>
 					</div>
-					<button onclick={() => handleEditCartItem(item)} disabled={$isCartUpdate}
-						>{$isCartUpdate ? 'Cart is updating...' : 'Edit item'}</button
-					>
-					<button onclick={() => handleCartItemQty(item, -item.quantity)} disabled={$isCartUpdate}
-						>{$isCartUpdate ? 'Cart is updating...' : 'Remove item'}</button
-					>
+					<div style="display: flex; gap: 10px;">
+						<button onclick={() => handleEditCartItem(item)} disabled={$isCartUpdate}
+							>{$isCartUpdate ? 'Cart is updating...' : 'Edit item'}</button
+						>
+						<button onclick={() => handleCartItemQty(item, -item.quantity)} disabled={$isCartUpdate}
+							>{$isCartUpdate ? 'Cart is updating...' : 'Remove item'}</button
+						>
+					</div>
 				</div>
 			{/each}
 		{:else}
