@@ -38,6 +38,7 @@
 	class="main-page-wrapper"
 	style={`--clipPath: ${videoSize.clipPath}; --matrix: ${videoSize.matrix}`}
 >
+	<div class="video-overlay"></div>
 	<video src={$isMobile ? video.mobile : video.desktop} class="video-container" autoplay loop muted
 	></video>
 	<div class="main-page-text-wrapper">
@@ -75,6 +76,28 @@
 		width: 100%;
 		object-fit: cover;
 		z-index: 0;
+	}
+
+	.video-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: 1;
+		background-image: linear-gradient(
+			270deg,
+			#0000 16% 27%,
+			#0003 36%,
+			#0000006b 45%,
+			#00000085 51%,
+			#0009 58%,
+			#000000ab 64%,
+			#000000bf 72%,
+			#000000d4 83%,
+			#000000e0
+		);
+		animation: 2s ease 0s 1 normal none running fadein;
+		height: 100%;
+		width: 100%;
 	}
 
 	.main-page-text-wrapper {

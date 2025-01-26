@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Button from '$lib/Button/Button.svelte';
 	import { getCollectionProducts } from '$lib/shopify';
 	import type { Collection, Product } from '$lib/shopify/types';
 	import { onMount } from 'svelte';
@@ -41,7 +42,7 @@
 			</div>
 		{/if}
 	</div>
-	<a href={`/${collection.handle}`}> go to prod</a>
+	<Button link={collection.handle} />
 </div>
 
 <style>
