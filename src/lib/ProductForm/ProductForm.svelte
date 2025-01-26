@@ -143,56 +143,72 @@
 <div>
 	<form onsubmit={handleSubmit}>
 		<input type="hidden" name="collection" value={collection?.handle} />
-		{#if collection.title === 'Send-in item' && products}
-			<div style="display: flex; flex-direction: column;">
-				<Input
-					type="text"
-					name={collection?.title}
-					bold
-					label={`${collection?.title} *`}
-					selectedProduct={selectedProduct?.title || 'default'}
-					onChange={(product) => handleProductChange(product as string)}
-					options={products}
-				/>
-				{#if productVariants}
+		<div style="display: flex; flex-direction: column;">
+			{#if collection.title === 'Send-in item' && products}
+				<div style="display: flex; flex-direction: column;">
 					<Input
 						type="text"
-						label={`${productVariants[0]?.selectedOptions[0]?.name} *`}
-						selectedProduct={selectedVariant?.title || 'default'}
-						name="variant"
+						name={collection?.title}
 						bold
-						options={productVariants}
-						onChange={(variant) => {
-							selectedVariant = productVariants.find((p) => p.title === (variant as string));
-						}}
+						label={`${collection?.title} *`}
+						selectedProduct={selectedProduct?.title || 'default'}
+						onChange={(product) => handleProductChange(product as string)}
+						options={products}
 					/>
-				{/if}
-				{#if addOns}
-					{#each addOns.variants as addOn (addOn.id)}
+					{#if productVariants}
 						<Input
-							type="checkbox"
-							label={`${addOn.title} (+${priceFormatter(addOn?.price.amount, 0)})`}
-							name={addOn.title}
-							checked={selectedAddOns?.find((a) => a.id === addOn.id)?.checked || false}
-							onChange={(checked) => handleAddOnChange(addOn, checked as boolean)}
+							type="text"
+							label={`${productVariants[0]?.selectedOptions[0]?.name} *`}
+							selectedProduct={selectedVariant?.title || 'default'}
+							name="variant"
+							bold
+							options={productVariants}
+							onChange={(variant) => {
+								selectedVariant = productVariants.find((p) => p.title === (variant as string));
+							}}
 						/>
-						{#if selectedAddOns.find((a) => a.id === addOn.id)?.checked}
-							<Input
-								label={`${addOn.title} *`}
-								type="text"
-								name={addOn.title}
-								bold
-								value={selectedAddOns.find((a) => a.id === addOn.id)?.value || ''}
-								onChange={(value) => handleAddOnValueChange(addOn.id, value as string)}
-							/>
-						{/if}
+					{/if}
+				</div>
+			{/if}
+			{#if collection.title === 'Item from store' && products}
+				<strong>{`${collection.title} *`}</strong>
+				<div style="display: flex; flex-direction: column; gap: 10px">
+					{#each products as product}
+						<Input
+							type="radio"
+							name={collection?.title}
+							label={`${product.title} (+$${Number(product?.variants[0].price.amount).toFixed(0)})`}
+							selectedProduct={selectedProduct?.title}
+							{product}
+							onChange={(product) => handleProductChange(product as string)}
+						/>
 					{/each}
-				{/if}
-			</div>
-		{/if}
+				</div>
+			{/if}
+			{#if addOns}
+				{#each addOns.variants as addOn (addOn.id)}
+					<Input
+						type="checkbox"
+						label={`${addOn.title} (+${priceFormatter(addOn?.price.amount, 0)})`}
+						name={addOn.title}
+						checked={selectedAddOns?.find((a) => a.id === addOn.id)?.checked || false}
+						onChange={(checked) => handleAddOnChange(addOn, checked as boolean)}
+					/>
+					{#if selectedAddOns.find((a) => a.id === addOn.id)?.checked}
+						<Input
+							label={`${addOn.title} *`}
+							type="text"
+							name={addOn.title}
+							bold
+							value={selectedAddOns.find((a) => a.id === addOn.id)?.value || ''}
+							onChange={(value) => handleAddOnValueChange(addOn.id, value as string)}
+						/>
+					{/if}
+				{/each}
+			{/if}
+		</div>
 		<button type="submit" name={$isCartEdit ? 'edit' : 'add'} disabled={$isCartUpdate}
 			>{$isCartEdit ? ($isCartUpdate ? 'updating...' : 'update item') : 'add to cart'}</button
 		>
 	</form>
-	<!-- <a href={cart.checkoutUrl}>Go to checkout</a> -->
 </div>

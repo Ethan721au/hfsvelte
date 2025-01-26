@@ -10,7 +10,7 @@
 		product?: Product;
 		options?: Product[] | ProductVariant[];
 		selectedProduct?: string;
-		onChange?: (e: boolean | string) => void;
+		onChange: (e: boolean | string) => void;
 		checked?: boolean;
 		value?: FormDataEntryValue | undefined | string;
 	};
@@ -30,19 +30,36 @@
 </script>
 
 <div class={`input-wrapper ${type}`}>
-	{#if name !== 'Send-in item' && name !== 'variant' && name !== 'Item from store'}
+	{#if name !== 'Send-in item' && name !== 'variant'}
 		<input
 			{type}
 			{name}
+			id={name === 'Item from store' ? product?.id : name}
+			value={name === 'Item from store' ? product?.title : typeof value === 'string' ? value : ''}
 			{checked}
-			id={name}
-			value={typeof value === 'string' ? value : ''}
 			onchange={(e) =>
-				onChange?.((e.target as HTMLSelectElement).value || (e.target as HTMLInputElement).checked)}
+				onChange(
+					name === 'Item from store'
+						? (e.target as HTMLSelectElement).value
+						: (e.target as HTMLSelectElement).value || (e.target as HTMLInputElement).checked
+				)}
 		/>
 	{/if}
 	<label for={product?.id || name} class={bold ? 'bold' : ''}>
-		{label}
+		<div style="display: flex; align-items: center; gap: 10px;">
+			{#if product?.featuredImage}
+				<div class="image-wrapper">
+					<img
+						class="image-container"
+						src={product.featuredImage.url}
+						alt={product.title}
+						width="40"
+						height="40"
+					/>
+				</div>
+			{/if}
+			{label}
+		</div>
 	</label>
 	{#if name === 'Send-in item' || name === 'variant'}
 		<select
@@ -50,7 +67,7 @@
 			id={name}
 			{name}
 			value={selectedProduct}
-			onchange={(e) => onChange?.((e.target as HTMLSelectElement).value)}
+			onchange={(e) => onChange((e.target as HTMLSelectElement).value)}
 		>
 			<option value="default" disabled> --Select a product-- </option>
 			{#if options}

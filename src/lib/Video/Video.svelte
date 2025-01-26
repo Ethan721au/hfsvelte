@@ -9,6 +9,8 @@
 
 	const videoSize = $state(initialVideoSize);
 
+	/// replace $effect with onMount
+
 	$effect(() => {
 		if (typeof window !== 'undefined') {
 			window.addEventListener('scroll', adjustVideoSize);
