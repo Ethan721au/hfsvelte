@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { cart } from '$lib/Cart/final.svelte';
 	import './header.css';
-	console.log($cart, 'headerCart');
 </script>
 
 <div class="header-wrapper">

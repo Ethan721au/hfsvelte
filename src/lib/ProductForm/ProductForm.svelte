@@ -37,7 +37,6 @@
 		productsWithVariants.find((p) => p.title === selectedProduct?.title)?.variants
 	);
 	let addOns = $derived(collectionProducts.filter((p) => p.productType === 'add-on')[0]);
-	let message = $state('');
 
 	$effect(() => {
 		if ($cart && $isCartEdit && cartItem) {

@@ -9,3 +9,8 @@ export const TAGS = {
 export const HIDDEN_PRODUCT_TAG = 'product_hidden';
 
 export const addOnsKeys = ['Character Name', 'Personalization', 'Quote up to 8 words'];
+
+export const video = {
+	desktop: 'https://static.humanitix.com/website/videos/hx_home.mp4',
+	mobile: 'https://static.humanitix.com/website/videos/hx_home_mobile.mp4'
+};
